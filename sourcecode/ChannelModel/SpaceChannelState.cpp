@@ -79,7 +79,7 @@ SpaceChannelState::~SpaceChannelState() {
     m_pBCS = nullptr;
 }
 
-//cnm gyh
+
 //LinkMatrix::Initialize(_rx) -> m_BCS.Initialize(_tx, _rx) 
 
 void SpaceChannelState::Initialize() {
