@@ -1,0 +1,40 @@
+[
+ {
+  "host": "10.112.225.185",
+  "port": 5432,
+  "http_port": 5001,
+  "user": "postgres",
+  "password": "mgl916",
+  "db": "training",
+  "usd_mopt_cell_beam": "usd_training_mopt_cell_beam",
+  "usd_mopt_cell_param": "usd_training_mopt_cell_param",
+  "usd_mopt_coverage_grid": "usd_training_mopt_coverage_grid",
+  "usd_mopt_coverage_cell": "usd_training_mopt_coverage_cell",
+  "usd_mopt_coverage_task": "usd_training_mopt_coverage_task",
+  "usd_mopt_coverage_ue": "usd_training_mopt_coverage_ue",
+  "usd_mopt_performance_grid": "usd_training_mopt_performance_grid",
+  "usd_mopt_performance_cell": "usd_training_mopt_performance_cell",
+  "usd_mopt_performance_task": "usd_training_mopt_performance_task",
+  "usd_mopt_performance_ue": "usd_training_mopt_performance_ue",
+  "users_route_multi_obj_opt": "users_route_multi_obj_opt"
+ },
+ {
+  "host": "10.112.225.185",
+  "port": 5432,
+  "http_port": 5432,
+  "user": "postgres",
+  "password": "mgl916",
+  "db": "uspace",
+  "usd_mopt_cell_beam": "usd_sln_mopt_cell_beam",
+  "usd_mopt_cell_param": "usd_sln_mopt_cell_param",
+  "usd_mopt_coverage_grid": "usd_sln_mopt_coverage_grid",
+  "usd_mopt_coverage_cell": "usd_sln_mopt_coverage_cell",
+  "usd_mopt_coverage_task": "usd_sln_mopt_coverage_task",
+  "usd_mopt_coverage_ue": "usd_sln_mopt_coverage_ue",
+  "usd_mopt_performance_grid": "usd_sln_mopt_performance_grid",
+  "usd_mopt_performance_cell": "usd_sln_mopt_performance_cell",
+  "usd_mopt_performance_task": "usd_sln_mopt_performance_task",
+  "usd_mopt_performance_ue": "usd_sln_mopt_performance_ue",
+  "users_route_multi_obj_opt": "users_route_multi_obj_opt"
+ }
+]

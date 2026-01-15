@@ -1,0 +1,220 @@
+&	SIM.UL.DBlerTarget			0.1
+//误帧率目标  The BLER target for 1st Tx[0.2]
+&	SIM.UL.IHARQMaxTransNum			4
+//上行HARQ最大重传数
+&	SIM.UL.IHARQProcessNum			7
+//上行HARQ最大线程数
+
+
+                                     12----in LTE one RB contains 12 subcarriers;
+                                                            18---16m
+
+& BTS.UL.DNoiseFigureDb                          15
+//噪声系数dB
+
+
+& BTS.UL.IDetectorMode                           3
+//选择检测算法                                                0----MRC
+                                                            1----IRC
+                                                            2----SimpleMMSE
+                                                            3----MMSE
+                                                            4----MMSE for Precoding Debug
+
+& BTS.UL.IScheduleMode                           0
+//上行调度模式
+                                                            0----PF[origenal 0]
+                                                            1----RR
+                                                            3----VirtualMIMO PF
+                                                            10 ----Vmimo Trial zhangyong
+                                                            11 ---- Vmimo orthogonal
+                                                            22 ---- PF more flexiable, UE will use diff RB Nums
+                                                            23------PF RME
+& BTS.UL.ISchedulerWindowLength			        300
+//调度时间窗长度
+& BTS.UL.dPFfactor                             0.8
+//上行比例公平系数   0.8 or 1
+
+& LINK.DNoisePowerSpectrumDensityDbmHz        -174
+//上行噪声功率谱密度(dBm/Hz)
+
+& LINK.ISEESMorMIESM                             1
+//选择EESM或MIESM的标记       0---EESM
+                    1---MIESM
+
+& MSS.DL.DNoiseFigureDb                          7          dB
+//用户噪声系数(dB)
+
+& MSS.DL.IDetectorMode                           0
+//选择检测算法
+                                                            0----MRC
+                                                            1----IRC
+                                                            2----SimpleMMSE
+                                                            3----MMSE
+                                                            4----MMSE for Precoding Debug
+
+& MSS.ISRS_DELAY                                 5
+//Sounding消息的时延
+
+& MSS.UL.DAlfa                                 0.8
+//路损补偿因子
+
+& MSS.UL.DAlfa4SRS                             0.8
+//SRS路损补偿因子
+
+& MSS.UL.DMaxTxPowerDbm                         23
+//用户最大发射功率dBm
+
+& MSS.UL.DMinTxPowerDbm                        -50
+//用户最小发射功率dBm
+
+& MSS.UL.DP0dBm                                -80          dBm
+//P0
+
+& MSS.UL.DP0dBm4SRS                            -80          dBm
+//P0SRS
+
+& MSS.UL.ISRSBandWidthIndex                      1
+//SRS带宽---候选值1，2，4分别表示全带宽，半带宽，1/4带宽            1---- full bandwidth SRS
+                                                            2---- 1/2 bandwidth SRS
+                                                            4---- 1/4 bandwidth SRS
+
+& MSS.UL.ISRS_PERIOD                             5
+//Sounding消息的周期(slot)
+
+& MSS.iMSCategory                                5
+//UE类型UE Category 3 don't support 64QAM(mcs<=20), others(5) support 64qam(MCS <=28)
+
+& SIM.DL.DBlerTarget                           0.1
+//下行误块率（BLER）目标值    The BLER target for 1st Tx
+
+& SIM.DL.ISBSize                                 5
+//在一个Subband中RB的数目                           5----in LTE one SubBand contains 5RB
+
+& SIM.UL.BIsMMSEOptionOneOn                      0
+//开启MMSE option 1 算法                                     0----orginal MMSE, have the H of strong interference
+                                                            1----MMSE OPTION ONE is on
+
+& SIM.UL.BisMUollaOn                             0
+//MU时是否开启欧拉                                  0----legacy olla/single for MU;[0]
+
+& SIM.UL.DEVMdb                               1000
+//EVM参数   EVM target(defaul 20db  1000 for no effect)
+
+& SIM.UL.DRBSupportedNumDoor                    10
+//number of RBSupported Door(higher is MU and lower is SU)
+
+& SIM.UL.ERROR.BIsDMRSErrorOn                    0
+// DMRS 信道估计误差
+                                                            1----DMRS Channel Estimation Error On [original = 1]
+                                                            0----off
+
+& SIM.UL.ERROR.BIsSRSErrorOn                     0
+//SRS信道误差                                     1----SRS Channel Estimation Error On
+                                                            0----off
+
+& SIM.UL.ERROR.DDeltaMSEDb                      14
+//SRS信道误差参数                                            Db SRS error Delta MSE(7-9DB)[7]
+                                                            1---- srs error model applied to DRMS
+
+& SIM.UL.FirstTimeMode                           1
+//多用户配对第一轮SU资源分配方式选择                               0----AllPairNoSpread
+                                                            1----AllPairTwoWaySpread
+                                                            2----SUFirstTwoWaySpread
+
+& SIM.UL.IMIMOMode                               6
+//the MIMO mode                                             0----MRC[original = 0][Virtual mimo = 6]
+                                                            1----EBB
+                                                            2----Precoding
+                                                            3----Precoding_Debug
+                                                            6----Virtual MIMO
+                                                            7----COMP-UL
+
+& SIM.UL.IMSnumOfMUMIMO                          1
+// MU MIMO用户数 Number of MS in Virtual(MU) MIMO
+
+& SIM.UL.IvmimoAdaptiveMode                      3
+//VMIMO 配对模式选择                                           0----fixed mode[almost no gain]
+                                                            1----rate gain mode
+                                                            2----coorelation mode
+
+& SIM_UL.UL.RateGainMode                         0
+//多用户配对第二轮配对方法选择
+
+& SIM.UL.dLoad                                 0.5
+//different interference load 0.5,0.7,1
+
+& SIM.UL.iMaxRBFindNum                           1
+//Maxium time of number finding higher riority MS among the RBSet
+
+& SIM.UL.iRBsegmentNum                          20
+// divide the whole band to x parts (0---segmentation off)
+
+& SIM.UL.imaxRBsegNum                           20
+//RB分段数，加快调度 maximum scheduled resource in UL, according to segements in ul; for partial band scheduling
+
+//20220828 cwq 闭环功控参数
+& MSS.UL.CLPCofPUSCH                                0
+//闭环功控开关                                              0---close
+                                                          1---open
+& MSS.UL.UserStrategy                               0
+//TPC生成策略 			0---使用平台中的策略
+				1---使用用户自己的策略
+& MSS.UL.TPC_Accumulation                           1
+//闭环功控类型                                           0---绝对式
+                                                                1---累积式
+& MSS.UL.ResetKey                                   1
+//TPC周期重置开关                                     0---close
+                                                                1---open
+& MSS.UL.ResetPeriod                                100
+//TPC重置周期
+& MSS.UL.HighTargetPL                               115
+//远点和中点路损分界线
+& MSS.UL.LowTargetPL                                100
+//近点和中点路损分界线
+& MSS.UL.HighTargetSINR                             25
+//近点目标SINR
+& MSS.UL.MidTargetSINR                              23
+//中点目标SINR
+& MSS.UL.LowTargetSINR                              20
+//远点目标SINR
+& MSS.UL.TargetSINRMargin                           1
+//累积式功控目标SINR缓冲区大小
+//PHR参数
+& MSS.UL.IsPhrOn                                    0
+//PHR开关
+& MSS.UL.PeriodicPeriod                             5    subframe
+//周期计时器
+& MSS.UL.ProhibitPeriod                             40    subframe
+//禁止计时器
+& MSS.UL.PowerFactorChange_dB                       1
+//功率/路损变化门限
+//SR参数
+& MSS.UL.IsSROn                                     1
+//SR开关
+& MSS.UL.SR_ProhibitPeriod                          5    ms
+//禁止计时器
+& MSS.UL.SR_TransMax                                32
+                                                    --{4, 8, 16, 32, 64}, default = 32
+//最大传输次数
+& MSS.UL.sr_Periodicity_slot                        10
+//SR周期                                             --SCS=15kHz,10\20\40\80
+                                                    --SCS=30kHz,10\20\40\80\160
+                                                    --SCS=60kHz,20\40\80\160\320
+
+& MSS.UL.SR_PRBNum                                  2
+
+& MSS.UL.SR_PUCCHFormat                             1
+                                                    ---{0, 1}       //大话务固定1
+& MSS.UL.SR_InitCyc                                 12
+                                                    ---[1, 12]
+& MSS.UL.SR_Format1_OCC                             7
+                                                    ---[1, 7]
+& MSS.UL.SR_PeriodSwitch                               1
+& MSS.UL.SR_RBNumSwitch                                1
+
+& MSS.UL.SR_SmartSchSwitch                          0
+//sr智能调度开关
+& MSS.UL.BSR_RetransTimer                           40
+                                                    {10,20,40,80,160,320,640,1280,2560,5120,10240} subframe
+& MSS.UL.BSR_PeriodicTimer                          40
+                                                    {1,5,10,16,20,32,40,64,80,128,160,320,640,1280,2560} subframe

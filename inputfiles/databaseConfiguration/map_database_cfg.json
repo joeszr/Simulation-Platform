@@ -1,0 +1,8 @@
+{
+  "host": "10.112.225.185",
+  "port": 5432,
+  "http_port": 5000,
+  "user": "postgres",
+  "password": "mgl916",
+  "db": "postgres"
+}

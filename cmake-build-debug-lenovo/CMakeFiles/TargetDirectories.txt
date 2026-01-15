@@ -1,0 +1,3 @@
+/home/lenovo/zcyupris/cmake-build-debug-lenovo/CMakeFiles/chty_tsm.dir
+/home/lenovo/zcyupris/cmake-build-debug-lenovo/CMakeFiles/edit_cache.dir
+/home/lenovo/zcyupris/cmake-build-debug-lenovo/CMakeFiles/rebuild_cache.dir

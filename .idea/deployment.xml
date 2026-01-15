@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="lenovo (44bbed19-9726-4a60-8095-871141499c12)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/zcyupris" local="$PROJECT_DIR$" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-lenovo" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release-lenovo" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-lenovo" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release-lenovo" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

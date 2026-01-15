@@ -1,0 +1,580 @@
+Parameters for  November FTP
+&	BASIC.IUnkCarrierBandMHz			100
+// ����TDD����FDD�ı�ʶ��(0-TDD;1-FDD)
+&	MIMO_CTRL.PMI_based_Precoding			0
+//下行TDD、FDD标识(0-TDD；1-FDD)
+&	Macro.LINK.DRadioFrequencyMHz			4000
+//中心频点
+&	BASIC.DSystemBandWidthKHz			20000
+//系统带宽
+&	BASIC.ISCSConfig			1
+//子载波配置，2^i*15kHz
+& BASIC.IRBSize                                 12
+//RB中的SC数
+
+//  仿真使用的帧结构
+&	SIM.FrameStructure4Sim.IIsSinglePeriod			1
+// 是否单周期
+
+&	SIM.FrameStructure4Sim.P1.IPeriodSlot 			5
+// 第1个周期时隙数
+&	SIM.FrameStructure4Sim.P1.IDLSlot			3
+// 第1个周期下行时隙
+&	SIM.FrameStructure4Sim.P1.IULSlot			1
+// 第1个周期上行时隙
+
+&	SIM.FrameStructure4Sim.P1.IDLOS			10
+// 1个周期S时隙下行符号数
+&	SIM.FrameStructure4Sim.P1.IULOS			2
+// 1个周期S时隙上行符号数
+
+&	SIM.FrameStructure4Sim.P2.IPeriodSlot 			5
+// 第2个周期时隙数
+&	SIM.FrameStructure4Sim.P2.IDLSlot			5
+// 第2个周期下行时隙
+&	SIM.FrameStructure4Sim.P2.IULSlot			0
+// 第2个周期上行时隙
+&	SIM.FrameStructure4Sim.P2.IDLOS			10
+// 第2个周期下行符号数
+&	SIM.FrameStructure4Sim.P2.IULOS			2
+// 第2个周期上行符号数
+
+//是否使用RRC层配置的参数
+& BASIC.RRC_Config_On 0
+
+///是否开启信道误差建模
+& ERROR.IChannelMatrixError     0
+& ERROR.UL.IChannelMatrixError     0
+
+& OVERHEAD.DMRS_PRB     0
+// 每个PRB中DMRE占据的RE数
+& OVERHEAD.OH_PRB       0
+// 每个PRB中信道开销，可配置为 0、6、12、18
+& OVERHEAD.DMRS_Type     1
+//DMRS Type 1/2
+& OVERHEAD.DMRS_Symbol     1
+//DMRS采用双符号还是单符号
+&	OVERHEAD.DL.IPDCCHNum			288
+//PDCCH开销
+&	OVERHEAD.DL.ICSIRSNum			64
+//CSI-RS开销
+&	OVERHEAD.DL.IDMRSNum			16
+//下行DMRS开销
+&	OVERHEAD.DL.ITRSNum			312
+//TRS开销
+&	OVERHEAD.DL.ISSBNum			960
+//SSB开销
+&	OVERHEAD.UL.IPUCCHNum			12
+//PUCCH开销
+&	OVERHEAD.UL.ISRSNum			12
+//SRS开销
+&	OVERHEAD.UL.IDMRSNum			12
+//上行DMRS开销
+&	OVERHEAD.UL.IPRACHNum			4032
+//PRACH开销
+& OVERHEAD.DMRS_PRB     0
+// 每个PRB中DMRE占据的RE数
+& OVERHEAD.OH_PRB       0
+// 每个PRB中信道开销，可配置为 0、6、12、18
+
+
+&	BASIC.INumBSs			1
+//基站数
+&	Macro.DSiteDistanceM			200
+//基站间距
+&	BASIC.DNumMSPerBTS		10
+//每小区用户数
+&	BASIC.IMaxServeMSNum			10
+//小区最大服务用户数
+&	BASIC.type1MSRate			0.5
+//混合用户下类型1用户占比
+&	BASIC.IBTSPerBS			3
+//基站内小区数
+&	Macro.LINK.DMinDistanceM			10
+//基站用户最小距离
+&	BASIC.IMsDistributeMode			0
+//撒点模式
+&	BASIC.DInterfProb			0.5
+//邻区干扰概率
+
+
+&	Macro.DL.DMaxTxPowerDbm			44
+//基站发生功率（dB）
+&	Macro.DTransmissionLineLoss_dB			0.5
+//传输线损耗
+&	Macro.DAntennaHeightM			25
+//基站天线高度
+&	Macro.IAntennaPatternMode			1
+//天线类型(0-全向天线；1-扇区天线)
+&	Macro.DMechanicalTiltDeg			0
+//机械下倾角
+&	Macro.IHPanelNum			1
+//基站水平面板数
+&	Macro.IVPanelNum			1
+//基站垂直面板数
+&	Macro.IHAntNumPerPanel			8
+//基站单面板水平阵子数
+&	Macro.IVAntNumPerPanel			8
+//基站单面板垂直阵子数
+&	Macro.Polarize_Num			2
+//基站天线极化数
+&	Macro.DAntennaGainDb			8
+//基站天线增益
+&	Macro.V_TXRU_DIV_NUM_PerPanel			2
+//基站单面板垂直通道数
+&	Macro.H_TXRU_DIV_NUM_PerPanel			1
+//基站单面板水平通道数
+&	Macro.DVAntSpace			0.8
+//基站垂直天线间距
+&	Macro.DHAntSpace			0.5
+//基站水平天线间距
+&	Macro.DV3DBBeamWidthDeg			65
+//基站垂直3dB带宽
+&	Macro.DH3DBBeamWidthDeg			65
+//基站水平3dB带宽
+&	Macro.DVBackLossDB			-30
+//基站垂直背损
+&	Macro.DHBackLossDB			-30
+//基站水平背损
+&	Macro.UL.DNoiseFigureDb			5
+//基站侧噪声功率系数
+&	BASIC.Noise			-120
+//底噪(dBm)
+&	Macro.DL.bEnable_BSAnalogBF			0
+//是否开启模拟波束赋形(0---No; 1---Yes)
+
+&	MSS.DAntennaHeightM			1.5
+//用户天线高度
+&	MSS.FirstBand.IVPanelNum			1
+//用户垂直面板数
+&	MSS.FirstBand.IHPanelNum			1
+//用户水平面板数
+&	MSS.FirstBand.IVAntNumPerPanel			1
+//用户单面板垂直阵子数
+&	MSS.FirstBand.IHAntNumPerPanel			2
+//用户单面板水平阵子数
+&	MSS.FirstBand.Polarize_Num			2
+//用户天线极化数
+&	MSS.FirstBand.DAntennaGainDb			0
+//用户天线增益
+&	MSS.FirstBand.V_TXRU_DIV_NUM_PerPanel			1
+//用户单面板垂直通道数
+&	MSS.FirstBand.H_TXRU_DIV_NUM_PerPanel			2
+//用户单面板水平通道数
+&	MSS.FirstBand.DHAntSpace			0.5
+//用户水平天线间距
+&	MSS.FirstBand.DVAntSpace			0.5
+//用户垂直天线间距
+&	MSS.FirstBand.DV3DBBeamWidthDeg			90
+//用户水平3dB带宽
+&	MSS.FirstBand.DH3DBBeamWidthDeg			90
+//用户垂直3dB带宽
+&	MSS.FirstBand.DHBackLossDB			-25
+//用户水平背损
+&	MSS.FirstBand.DVBackLossDB			-25
+//用户垂直背损
+&	Macro.DMSBodyLoss_dB			3
+//人体穿损
+&	MSS.FirstBand.DL.DNoiseFigureDB			7
+//用户噪声系数
+&	MSS.DVelocityMPS			8.33333
+//用户移动速度
+&	MSS.bIsOutdoorInCar_notOnCar			1
+//室外用户是否在车内，1-在；0-不在
+&	MSS.IMinBuildingFloor			4
+//用户最低楼层
+&	MSS.IMaxBuildingFloor			8
+//用户最高楼层
+&	MSS.DProbOutdoor			0.2
+//用户室外概率
+
+
+&	TRAFFIC.ITrafficModel			0
+//业务模型 0----FullBuffer  4----FTP model3    5----XR  6----XRMulti  7-----从数据库读取业务  100----混合业务
+&	TRAFFIC.DPacketSize		50
+//包大小
+&	TRAFFIC.DMacroLamda			50
+// 类型1用户到达率
+&	XR.FPS			60
+//XR业务帧率
+&	XR.SumRate			30
+//XR业务数据速率
+&	XR.dDelayBuget_ms			20000
+//有包业务丢包时延（ms）
+&	XR.alpha			2
+//XR多数据流业务参数alpha
+
+
+&	BASIC.ifcoexist			0
+//是否开启混合用户
+
+&	BASIC.type1BandRate			0.8
+//类型1独占带宽比例
+&	TRAFFIC.DPacketSize_2			20
+//类型2数据包大小
+&	TRAFFIC.DMacroLamda_2			100
+//类型2用户到达率
+&	BASIC.IMaxModulLevel			8
+//最大调制阶数，用于确定NRMCSNumDL
+&	BASIC.IMaxModulLevelUL			8
+//上行最大调制阶数
+&	MSS.FirstBand.IVPanelNum_2			1
+//类型2用户垂直面板数
+&	MSS.FirstBand.IHPanelNum_2			1
+//类型2用户水平面板数
+&	MSS.FirstBand.IVAntNumPerPanel_2			1
+//类型2用户单面板垂直通道数
+&	MSS.FirstBand.IHAntNumPerPanel_2			1
+//类型2用户单面板水平通道数
+&	MSS.FirstBand.DVAntSpace_2			0
+//类型2用户垂直天线间距
+&	MSS.FirstBand.DHAntSpace_2			0.5
+//类型2用户水平天线间距
+&	MSS.FirstBand.DV3DBBeamWidthDeg_2			90
+//类型2用户垂直3dB带宽
+&	MSS.FirstBand.DH3DBBeamWidthDeg_2			90
+//类型2用户水平3dB带宽
+&	MSS.FirstBand.V_TXRU_DIV_NUM_PerPanel_2			1
+//类型2用户单面板垂直通道数
+&	MSS.FirstBand.H_TXRU_DIV_NUM_PerPanel_2			1
+//类型2用户单面板水平通道数
+&	MSS.FirstBand.Polarize_Num_2			2
+//类型2用户天线极化数
+&	MSS.FirstBand.DAntennaGainDb_2			0
+//类型2用户天线增益
+
+
+&	MIMO_CTRL.IMUMIMONum			1
+//最大MUMIMO配对用户数
+&	BASIC.IScheduleMode			0
+//下行调度算法(0----PF;1----RR)
+&	MIMO_CTRL.I2Dor3DMIMO			1
+//2D或3DMIMO(0---2D;1---3D)
+&	SIM.DL.ISchedulerWindowLength			300
+//调度时间窗长度
+&	SIM.BIsRankAdaptive			1
+//RANK自适应开关
+&	MSS.FirstBand.UL.DP0Dbm4SRS			-80
+//功控目标值Pb0
+&	SIM.DL.DProportionFairFactor			0.8
+//比例公平系数
+&	BASIC.DHandOffMarginDb			3
+//接入参数，接入基站RSRP与最大值的最大差距
+&   BASIC.DRSRPConnectedThreshold   -150
+
+&	MSS.FirstBand.UL.DAlfa4SRS			0.8
+//功控路损补偿系数alfa
+&	MIMO_CTRL.IMaxRankNum			1
+//用户最大流数
+&	MIMO_CTRL.IMaxLayerNum_BS			5
+//基站侧每个多用户组的最大流数
+m
+
+&	BASIC.IMaxModulLevel			8
+//最大调制阶数，用于确定NRMCSNumDL
+&	BASIC.IMaxModulLevelUL			8
+//上行最大调制阶数
+&	SIM.DL.DBlerTarget			0.1
+//链路级接口误帧率目标，每次传输要求误帧率小于该值
+&	SIM.DL.IHARQMaxTransNum			4
+//下行最大HARQ重传次数
+&	SIM.DL.IHARQProcessNum			7
+//HARQ线程数
+&	LINK_CTRL.IStrongLinkNum			6
+//强链路个数
+&	LINK_CTRL.IFrequencySpace			12
+//子载波建模间隔(1,2,4,6,12 subcarrier)
+&	MIMO_CTRL.IMMSEOption			0
+//使用MMSE算法的子选项(0----MMSE_IRC(Ideal);1----MMSE_Option1; 2----MMSE_IRC(Practical))
+&	SIM.IChannelInterpolationSpace			12
+//信道估计插值间隔
+
+
+&	BASIC.IScenarioModel			2
+//场景：UMa,UMi,Rma等
+&	LINK_CTRL.I2DOr3DChannel			1
+//2D或3D信道(0---2D; 1---3D)
+&	LINK_CTRL.IISShadowFadingUsed			1
+//是否建模阴影衰落(0---No; 1---Yes)
+&	LINK_CTRL.IISFastFadingUsed			1
+//是否建模快衰(0---No;1---Yes)
+&	Macro.DPenetrationLossdB			10
+//穿墙损耗
+&	Macro.ILOSType			2
+
+&	BASIC.INumSnapShot			1
+//drop数
+&	BASIC.ISlotPerDrop		500
+//仿真时隙数
+&	BASIC.BISMultiThread			1
+//多线程开关(1-多线程；0-单线程)
+&	BASIC.IWarmUpSlot			50
+//热启动时隙数
+&	BASIC.ISeed			    0
+//随机种子
+&	BASIC.IDLORUL			3
+//1-下行；2-上行；3-联合仿真(0----DL;1----UL_Table1;2----UL_Table2)
+& BASIC.ISINR2BLERTable                          1         
+//决定了链路接口读哪一张表(0----DL;1----UL_Table1;2----UL_Table2)
+
+& BASIC.INRMCSNumUL                              28       
+//上行最大MCS等级
+
+& BASIC.DOverHead_LTE                            0.238       
+//使用LTE链路级接口的绑定开销
+
+
+& BASIC.ITotalFrameNum                           5          
+//1slot子帧数
+
+& BASIC.DNoisePowerSpectrumDensityDbmHz          -174          
+//֡噪声功率谱密度
+
+& BASIC.ISubScenarioModel                       12
+//子场景，只是为了设置一些参数
+
+& BASIC.IChannelModel_VariantMode               11
+//信道模型参数，受场景影响(10----ModeA;11----ModeB)
+
+& SIM.UL.IHARQProcessNum                         4          
+//HARQ线程数
+
+
+//& SIM.DL.ISubframeNum                            1          Number of Downlink Subframe
+//下行子帧数
+//& SIM.UL.ISubframeNum                            4          Number of Uplink Subframe
+//上行子帧数
+
+& MIMO_CTRL.IHorCovR                              1
+//下行算信道矩阵用的方法选择(0----H;1----CovR)
+
+//2D-MIMO映射矩阵
+// & MIMO_CTRL.I2DMatrixmode                        2          
+                                                            0---1TXRU Per Column(64Tx8port)
+                                                            1---2TXRU Per Column(64Tx16port)
+                                                            2---4TXRU Per Column(64Tx32port)
+                                                            3---1TXRU Per Column(128Tx16port)
+                                                            4---2TXRU Per Column(128Tx32port)
+                                                            5---4TXRU Per Column(128Tx64port)
+                                                            6---2TXRU Per Column(96Tx24port)
+                                                            7---4TXRU Per Column(96Tx32port)
+                                                            8---4TXRU Per Column(192Tx64port)
+				 9---1TXRU Per Column(16Tx2port)
+//Subarr还是Fullconnection接入
+// & MIMO_CTRL.SubarrORFullconnec                  0          0---Subcar
+                                                              1---Fullconnec
+//MU-MIMO调度方式：0random；1最优配对
+// & MIMO_CTRL.IMUMIMOScheduleMethod                1          0----Random
+                                                               1----最优配对
+
+
+& MIMO_CTRL.IEnable_Portbased_BF_CSIRS           0          
+//(0----TxDCQI;1----Portbased_BF_CSIRS  )
+
+
+& MIMO_CTRL.CSIRS_PortNum                        16
+//CSIRS端口数
+
+& MIMO_CTRL.IMIMOMode                           11          
+
+
+& MIMO_CTRL.ISpatialBasedOrPanelBased            0          
+//(0----Spatial-Based;1----Panel-Based)
+
+& MIMO_CTRL.IDetectorMode                        3          
+//检测算法(0----MRC;1----IRC;2----SimpleMMSE;3----MMSE)
+
+& MIMO_CTRL.IApSounding                          0          
+//(1----ApSounding;0----ApSounding)
+
+& ERROR.IAntennaCalibrationError                 0          
+//天线校准建模(0无误差；1有误差)
+
+& ERROR.ICQI_DELAY                               5          
+//CQI时延(slot)
+
+& ERROR.ICQI_PERIOD                              5          
+//CQI周期(slot)
+
+& ERROR.IDMRS_Error                              0
+//DMRS误差，有问题(0----�����;1----�����)
+
+& ERROR.IRI_Meathod                              1          
+// 0----分别计算不同Rank下的吞吐量，选择吞吐量最大的Rank
+   1----计算信道相关阵的特征值，当特征值相差不大时选择多流
+
+
+& ERROR.ISRS_COMB                                2          
+//  0----全干扰
+    1----1/2干扰
+    2----1/4干扰
+    3----1/8干扰
+
+
+& ERROR.ISRS_DELAY                               5         
+//SRS延迟(Slot)
+
+& ERROR.ISRS_Error                               0
+//SRS误差建模( 0有误差；1无误差)
+
+& ERROR.ISRS_PERIOD                             10          
+& ERROR.ISRS_PERIOD                             10
+//SRS周期(Sounding Message Period)
+
+& ERROR.ISRS_TxMode                              2          
+//Sounding的发送模式
+// 0----single antenna send SRS
+    1----Two antennas send SRS alternately
+    2----Two antennas send SRS Simutanously
+
+& ERROR.ISRS_TxSpace                             2          
+//sounding子载波发送间隔
+
+& ERROR.ISRS_WIDTH                               4          
+// 1----全带宽
+   2----1/2带宽
+   4----1/4带宽
+
+& ERROR.DEVMGateDb                             100          
+//(��λ:dB)
+
+& ERROR.DSRS_OSNumPerSlot                      0.4
+//Sounding消息在每个slot中占用的符号数目
+
+& ERROR.DSRS_SystemBW_MHz                      40          
+//SRS 20----LTE
+      100----NR
+& ERROR.DSRS_SRS_UnitBW_MHz                    5
+//  5----LTE
+    20----NR
+
+& Macro.DMechanicalTiltDeg                          9
+ //机械下倾角
+
+& SmallCell.LINK.DMinDistCluster2MacroM                105          m
+& SmallCell.LINK.DMinDistClusterRadiusM_PicoDrop        50          m
+& SmallCell.LINK.DMinDistClusterRadiusM_UEDrop          70          m
+& SmallCell.LINK.DMinDistPico2MacroM                    75          m
+& SmallCell.LINK.DMinDistPico2PicoM                     20          m
+& SmallCell.LINK.DMinDistPico2UEM                        5          m
+& SmallCell.LINK.DPicoAntennaGainDbi                     5          dB
+& SmallCell.LINK.DPicoAntennaHeightM                    10          m
+& SmallCell.LINK.DPicoMaxTxPowerDbm                     30          dBm;24/30/37
+& SmallCell.LINK.DPicoOutBiasDb                          0          
+& SmallCell.LINK.DPicoRadiusM                           40          m
+& SmallCell.LINK.DUEProbInCluster_Cluster         0.666667          
+& SmallCell.LINK.DUEProbInPicoZone4b              0.666667          baseline for #4b 2/3
+& SmallCell.LINK.IHetnetEnvironmentType                  3          1----Normal
+                                                                    2----#4b
+                                                                    3----Outdoor Cluster
+& SmallCell.LINK.IPicoAntennaNum                         2          
+& SmallCell.LINK.IPicoClusterNumPerMacro_Cluster         1          
+& SmallCell.LINK.IPicoNumPerCluster_Cluster              4          
+& SmallCell.LINK.IPicoNumPerMacro4b                      4          
+& SmallCell.LINK.IPicoNumPerMacroNormal                  4          according to 4a4b
+& SmallCell.LINK.IPicoUENumPerCell4b                    30          
+& SmallCell.LINK.IPicoUENumPerCellNormal                25          
+& SmallCell.LINK.IUENumPerCell_Cluster                  30
+//СС��������Ŀǰδʹ��
+   
+& MSS.IInitialize1or2Panel                               1          
+// 建模1或2面板  1----Initialize 1 UEPanel
+               2----Initialize 2 UEPanel
+
+统计折算用帧结构，与仿真帧结构类似
+& SIM.FrameStructure4Stat.IIsSinglePeriod                 1
+//1表示单周期，0表示双周期
+& SIM.FrameStructure4Stat.P1.IPeriodSlot                  5
+//帧结构周期，以时隙为单位
+& SIM.FrameStructure4Stat.P1.IDLSlot                      3
+//下行完整时隙（从前向后数）
+& SIM.FrameStructure4Stat.P1.IULSlot                      1
+//上行完整时隙（从后向前数）
+& SIM.FrameStructure4Stat.P1.IDLOS                       10
+//下行符号数目（从下行完整时隙之后向后数，从前向后数）
+& SIM.FrameStructure4Stat.P1.IULOS                        2	
+//上行符号数目（从下行完整时隙之后向后数，从前向后数）
+
+& SIM.FrameStructure4Stat.P2.IPeriodSlot                  5
+& SIM.FrameStructure4Stat.P2.IDLSlot                      2
+& SIM.FrameStructure4Stat.P2.IULSlot                      2
+& SIM.FrameStructure4Stat.P2.IDLOS                       10
+& SIM.FrameStructure4Stat.P2.IULOS                        2	
+//第2个周期参数设置
+	
+& XR.dPeriod_ms                                         16.6
+//XR业务模型-数据包发包间隔
+
+& XR.dS                                                 1
+//XR业务模型-数据包方差
+
+& XR.dPacketSizeDefault_Kbit                            100
+//不用的XR数据包大小
+
+& XR.dPmax                                              750
+//XR业务的最大包大小
+
+& XR.dPave                                              2
+//XR业务模型-数据包均值
+
+& XR.iLogperiod_slot                                    100
+//XR记录丢包率文件刷新周期
+
+& SIM.DL.Ik0_slot                                       1          slot
+//k0时隙
+& SIM.DL.Ik1_slot                                       1          slot
+//k1时隙
+& SIM.DL.Ik3_slot                                       3          slot
+//k3时隙
+
+& SIM.DL.N1_OS                                         10          
+//计算k1的参数
+
+& Macro.DNLOS_FreFadingFactor                           31.5
+//NLOS 频率衰减因子
+
+& Macro.DOTA_dB                                         4
+//OTA损耗
+
+& BASIC.IUTattachment                                   0
+//��ɾ��
+
+& ERROR.DEVMGate_percent                                0
+//EVM��ģ�����о�
+
+& BASIC.DDLRENumPerRBforData 100.29
+//平均每RB可用于的RE数
+
+& SIM.UL.RatePairMaxMode                         0          
+//0----MUMIMO_Rate2PairMode_SU The First
+//1----MUMIMO_Rate2PairMode_MU Pair The First
+
+
+& LINK_CTRL.Islot4Hupdate			                                        1      the interval of updating H(chanel matrix) by slot
+
+& AMC.SelfConfig                                        1       0--默认参数   1--手动配置
+& AMC.ACKSchedWindow                                    100      [0:1:1000]          默认值 100
+& AMC.NACKSchedWindow                                   100     [0:1:1000]          默认值 100
+& AMC.ACKThred                                          90      [0:1:1000]          默认值 90
+& AMC.NACKThred                                         10      [0:1:1000]          默认值 10
+& AMC.IinitialSINR                                      0       [-40:0.05:40]dB     默认值 0
+& AMC.SINRUpStep                                        0.05     [-40:0.05:40]dB     默认值 0.05
+& AMC.SINRDownStep                                      0.5     [-40:0.05:40]dB     默认值 0.5
+& AMC.CQIFilterFactor                                   0.2     [0:0.1:1]           默认值 0.2
+
+& DRX.Switch                                            0
+DRX功能开关
+& DRX.LongCycle                                         160     ms
+DRX长周期
+& DRX.OnDurationTimer                                   10      ms
+& DRX.InactivityTimer                                   40      ms
+& DRX.ShortSwitch                                       1
+短周期开关
+& DRX.ShortCycle                                        40      ms
+DRX短周期
+& DRX.ShortCycleTimer                                   2
+短周期持续次数
+
+
+& Macro.DL.IschedulerthreadNum -1
+FTP调度线程数，-1时取ceil（CPU数/小区数）Parameters for  November FTP
