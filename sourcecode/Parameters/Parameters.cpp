@@ -3,6 +3,7 @@
 ///@author dushaofeng
 #include "../Statistician/Directory.h"
 #include "Parameters.h"
+#include <vector>
 
 // 构造函数，在本函数中读取输入参数，并且把参数再输出到文件中
 
@@ -46,6 +47,11 @@ Parameters::Parameters() {
     }
     string filename_New = "ParametersRecord_New"; //使用该文件来记录所有读取到的参数
     RecordParameters_New(filename_New); //把参数输出到文件中
+    
+    // 输出OverWriteDL、OverWriteUL和Scene.txt中的参数
+    string inputFilesParamsFilename = "InputFilesParametersRecord.txt";
+    OutputInputFilesParameters(inputFilesParamsFilename.c_str());
+    
     cout << "DL Parameters initialized completed" << endl;
     //处理下行_end
 }
@@ -2465,4 +2471,159 @@ void Parameters::Build_Scene() {
     m_Str2ParaMap_DL["RIS.DistributeHexagon_Min_Radiu"] = &(RIS.DistributeHexagon_Min_Radiu);
     m_Str2ParaMap_DL["RIS.DistributeHexagon_Max_Radiu"] = &(RIS.DistributeHexagon_Max_Radiu);
 
+}
+
+/// @brief 输出OverWriteDL、OverWriteUL和Scene.txt中的参数，按首字母排序
+/// @param _pOutputFilename 输出文件名
+void Parameters::OutputInputFilesParameters(const char* _pOutputFilename) {
+    // 存储参数信息：参数名 -> (值, 注释列表)
+    struct ParameterInfo {
+        string value;
+        vector<string> comments;
+    };
+    map<string, ParameterInfo> paramMap;
+    
+    // 要读取的文件列表
+    vector<string> inputFiles = {
+        "./inputfiles/OverWriteDL.txt",
+        "./inputfiles/OverWriteUL.txt",
+        "./inputfiles/Scene.txt"
+    };
+    
+    // 读取每个文件
+    for (const auto& filename : inputFiles) {
+        ifstream f(filename);
+        if (!f.is_open()) {
+            cout << "Warning: Cannot open file " << filename << endl;
+            continue;
+        }
+        
+        string line;
+        string currentParam;
+        string currentValue;
+        vector<string> currentComments;
+        bool hasCurrentParam = false;
+        
+        while (getline(f, line)) {
+            // 去除行尾的\r（Windows换行符）
+            if (!line.empty() && line.back() == '\r') {
+                line.pop_back();
+            }
+            
+            // 去除行首空白
+            size_t start = line.find_first_not_of(" \t");
+            string trimmedLine = (start == string::npos) ? "" : line.substr(start);
+            
+            // 检查是否是参数行（以&开头）
+            if (!trimmedLine.empty() && trimmedLine[0] == '&') {
+                // 如果有之前的参数，先保存
+                if (hasCurrentParam && !currentParam.empty()) {
+                    if (paramMap.find(currentParam) == paramMap.end()) {
+                        paramMap[currentParam] = ParameterInfo();
+                        paramMap[currentParam].value = currentValue;
+                    }
+                    // 合并注释
+                    if (!currentComments.empty()) {
+                        for (const auto& comment : currentComments) {
+                            paramMap[currentParam].comments.push_back(comment);
+                        }
+                    }
+                }
+                
+                // 解析新参数行：&	参数名	值 [可能的注释]
+                // 使用制表符或空格分割
+                istringstream iss(trimmedLine);
+                string marker;
+                iss >> marker; // 读取 &
+                
+                string paramName;
+                if (iss >> paramName) {
+                    currentParam = paramName;
+                    hasCurrentParam = true;
+                    
+                    // 读取值（可能用制表符分隔）
+                    string value;
+                    if (iss >> value) {
+                        currentValue = value;
+                    } else {
+                        currentValue = "";
+                    }
+                    
+                    // 读取同一行可能存在的注释（剩余部分）
+                    string remaining;
+                    getline(iss, remaining);
+                    if (!remaining.empty()) {
+                        // 去除前导空白
+                        size_t remStart = remaining.find_first_not_of(" \t");
+                        if (remStart != string::npos) {
+                            currentComments.clear();
+                            currentComments.push_back(remaining.substr(remStart));
+                        } else {
+                            currentComments.clear();
+                        }
+                    } else {
+                        currentComments.clear();
+                    }
+                }
+            } else if (!trimmedLine.empty()) {
+                // 非参数行，可能是注释或其他内容
+                if (hasCurrentParam && !currentParam.empty()) {
+                    // 保存为注释
+                    currentComments.push_back(trimmedLine);
+                }
+            } else {
+                // 空行：如果当前有参数且有注释，保存参数（空行表示参数结束）
+                if (hasCurrentParam && !currentParam.empty() && !currentComments.empty()) {
+                    if (paramMap.find(currentParam) != paramMap.end()) {
+                        for (const auto& comment : currentComments) {
+                            paramMap[currentParam].comments.push_back(comment);
+                        }
+                    }
+                    currentComments.clear();
+                }
+            }
+        }
+        
+        // 保存最后一个参数
+        if (hasCurrentParam && !currentParam.empty()) {
+            if (paramMap.find(currentParam) == paramMap.end()) {
+                paramMap[currentParam] = ParameterInfo();
+                paramMap[currentParam].value = currentValue;
+            }
+            if (!currentComments.empty()) {
+                for (const auto& comment : currentComments) {
+                    paramMap[currentParam].comments.push_back(comment);
+                }
+            }
+        }
+        
+        f.close();
+    }
+    
+    // 输出到文件（map已经按参数名自动排序）
+    ofstream fout(_pOutputFilename);
+    if (!fout.is_open()) {
+        cout << "Error: Cannot create output file " << _pOutputFilename << endl;
+        return;
+    }
+    
+    // 输出参数，按首字母顺序
+    for (const auto& pair : paramMap) {
+        const string& paramName = pair.first;
+        const ParameterInfo& info = pair.second;
+        
+        // 输出参数行：&	参数名	值（格式与输入文件一致，使用制表符）
+        fout << "&\t" << paramName << "\t\t\t" << info.value << endl;
+        
+        // 输出注释
+        for (const auto& comment : info.comments) {
+            fout << comment << endl;
+        }
+        
+        // 参数之间空一行
+        fout << endl;
+    }
+    
+    fout.close();
+    cout << "Parameters output completed to " << _pOutputFilename << ". Total parameters: " << paramMap.size() << endl;
 }
