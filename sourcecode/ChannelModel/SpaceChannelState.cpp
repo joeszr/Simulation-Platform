@@ -27,7 +27,7 @@
 using namespace cm;
 
 ///构造函数
-//202601
+/////20260118
 SpaceChannelState::SpaceChannelState(BasicChannelState* _pBCS) {
     m_pBCS = _pBCS;
 
