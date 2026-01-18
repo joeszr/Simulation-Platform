@@ -1254,6 +1254,8 @@ private:
     void RecordParameters_New(const string& _pFilename);
     /// @brief 重新排序输入参数函数 	 	
     void ReorderCaseParameter();
+    /// @brief 输出OverWriteDL、OverWriteUL和Scene.txt中的参数，按首字母排序
+    void OutputInputFilesParameters(const char* _pOutputFilename);
 
     //上行添加_begin 	
     /// @brief 建立字符串和参数之间的关系 	

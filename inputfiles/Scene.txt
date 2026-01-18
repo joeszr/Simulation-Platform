@@ -1,0 +1,56 @@
+
+/////////////////////////////////////// RIS ///////////////////////////////////////////
+& BASIC.BISRIS                                   1
+& BASIC.BRISCASE                                 1
+& BASIC.IRISPerBTS                               1
+& RIS.LINK.DRadioFrequencyMHz			3500
+& RIS.IAntennaPatternMode			1
+& RIS.DV3DBBeamWidthDeg				70		2.6G:65 3.5G:70
+& RIS.DH3DBBeamWidthDeg				90		2.6G:65 3.5G:90
+& RIS.DAntennaGainDb				6		2.6G:8 3.5G:6
+& RIS.DAntennaHeightM				15
+
+& RIS.DMechanicalTiltDeg			10		2.6G:12deg 3.5G:10deg
+& RIS.DElectricalTiltDeg			0
+& RIS.DVAntSpace				    0.7		2.6G:0.8 3.5G:0.7
+& RIS.DHAntSpace				    0.5
+& RIS.UL.DNoiseFigureDb				5
+
+& RIS.IVAntNumPerPanel				32
+& RIS.IHAntNumPerPanel				32
+& RIS.IVPanelNum				1
+& RIS.IHPanelNum				1
+& RIS.Polarize_Num				1
+& RIS.V_TXRU_DIV_NUM_PerPanel			32
+& RIS.H_TXRU_DIV_NUM_PerPanel			32
+
+& RIS.ANALOGBEAM_CONFIG.iHRISBeamNum		15
+& RIS.ANALOGBEAM_CONFIG.iVRISBeamNum		4
+& RIS.ANALOGBEAM_CONFIG.dStartHRISBeamDeg	-45
+& RIS.ANALOGBEAM_CONFIG.dStartVRISBeamDeg	77
+& RIS.ANALOGBEAM_CONFIG.dSpaceHRISBeamDeg	6
+& RIS.ANALOGBEAM_CONFIG.dSpaceVRISBeamDeg	6
+
+& RIS.DHBackLossDB				    -30
+& RIS.DVBackLossDB				    -30
+& RIS.LINK.DMinDistanceM			35
+& RIS.DL.bEnable_BSAnalogBF			0
+
+& RIS.IS_SmallScale                             1                 是否开启小尺度
+
+& RIS.dMMSE_RIS                                 0                 MMSE计算SINR是否加入RIS影响（临时参数）
+
+& BASIC.LOSPROB                                 0.1               直连链路LOS概率，临时参数，下个版本删除。
+& RIS.is_BestBTS2MSBeam                         1                 是否开启基站最优直连波束case
+& RIS.is_DoubleBest                             0                 是否开启直连和级联都最优
+& RIS.is_BestBeam                               0                 是否开启beamscanning
+& RIS.is_BestCase                               0                 是否开启case
+& RIS.is_Max_UE_RIS                             0                 是否在基站最优直连波束和beamscanning中取最优
+& RIS.is_BestMiddle                             0                 是否取最佳中间波束
+& RIS.is_New                                    0                 是否最新选RIS方式
+& RIS.is_baseline                               1                 是否开启baseline
+& RIS.com_case                                  1                 近似RIS补偿的来源 0-New 1-Case
+& RIS._case                                     1          基本调相的类型,0-随机相位 1-公式计算出的理想 2-理想 3-1bit量化 4-2bit量化 5-波束扫描
+
+& RIS.DistributeHexagon_Min_Radiu               0.33
+& RIS.DistributeHexagon_Max_Radiu               0.34
