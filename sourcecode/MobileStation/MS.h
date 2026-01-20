@@ -122,7 +122,7 @@ public:
     int Best_RIS_V0;
     int Best_RIS_H3;
     int Best_RIS_V3;
-    //服务RIS的振子相位
+    //服务RIS的振子相位20250117
     itpp::cmat tempR_PRIS;
     //作为生成信道的接收节点
     std::shared_ptr<cm::MSRxNode> m_pRxNode;
@@ -189,8 +189,7 @@ private:
     ///
     bool bReInitialize;
     bool bHasTraffic;
-
-    double m_SpeedSacleFactor;
+    //double m_SpeedSacleFactor;
     //20190917
 public:
     std::unordered_map<int, cmat>ms_SCPrecodeMat;

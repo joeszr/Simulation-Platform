@@ -15,7 +15,7 @@ namespace cm {
         double Db(double _dDisM, double _dUEHeightM) override;
     public:
         /// @brief 构造函数
-        PathLossUrbanMacroLOS_Highfreq() = default;
+        PathLossUrbanMacroLOS_Highfreq();
         /// @brief 析构函数
         ~PathLossUrbanMacroLOS_Highfreq() override = default;
     };

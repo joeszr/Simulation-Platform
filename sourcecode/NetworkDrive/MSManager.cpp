@@ -50,7 +50,10 @@ MSManager::MSManager() {
                 break;
         }
     }
+    m_bExistMultiTRP = false;//20260119
 }
+
+
 
 MS& MSManager::GetMS(int _id) {
     return m_vMS[_id];
@@ -184,4 +187,7 @@ void MSManager::DistributeMSthread(int n){
         DistributeMSs(GetMS(i));
     }
 }
-//chty 1103
+///20260119
+vector<std::shared_ptr<MS> >& MSManager::GetpMS(){
+    return v_pMS;
+}

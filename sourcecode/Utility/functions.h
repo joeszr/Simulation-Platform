@@ -119,13 +119,17 @@ double xUniform_channel(double _dmin = 0.0, double _dmax = 1.0);
 int xUniformInt(const int _imin = 0, const int _imax = 1);
 double xUniform_distributems(double _dmin = 0, double _dmax = 1);
 double xUniform_msconstruct(double _dmin = 0, double _dmax = 1);
+///20260119
+double xUniform_distributepico(double _dmin = 0, double _dmax = 1);
+double xNormal_msconstruct(double _dave = 0, double _dstd = 1);
 /// @brief 判断输入参数指定的时隙是下行时隙或上行时隙
 /// @return 0---Downlink, 1---Uplink
 int DownOrUpLink(int _iTime);
 
 /// @brief 计算给定周期内有多少个上行slot
 int GetULSlotNum(int Period);
-
+///20260119
+double xNormal_channel(double _dave = 0, double _dstd = 1);
 // @brief Block Diagolization
 void BD(const pair<cmat, cmat>& _rChannelMat, pair<cmat, cmat>& _rCodeWord, pair<double, double>& _rSLR, pair<double,double>& _rSD);
 void BDR(const pair<cmat, cmat>& _rCovMat, pair<cmat, cmat>& _rCodeWord, pair<double, double>& _rSLR, pair<double,double>& _rSD);

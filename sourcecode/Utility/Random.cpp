@@ -7,6 +7,7 @@
 #include <mutex>
 #include <cassert>
 using namespace std;
+
 double Random::xUniform(double _dmin, double _dmax) {
     //static std::mutex lock;
     //std::lock_guard<std::mutex> l(lock);

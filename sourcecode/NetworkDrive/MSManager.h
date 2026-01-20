@@ -18,17 +18,29 @@ class MSManager {
     //chty 1103
 private:
     void DistributeMSthread(int);
+    bool m_bExistMultiTRP;
 //chty 1103
 public:
     ///存储所有的移动台
     vector<MS> m_vMS;
+    vector<std::shared_ptr<MS> > v_pMS;
+
     std::shared_ptr<DistributeMSAlgo> m_pDMSA;
+///20260119
+    vector<std::shared_ptr<MS> >& GetvMS() {
+        return v_pMS;
+    };
+    bool& GetExistMultiTRP() {
+        return m_bExistMultiTRP;
+    }
     ///移动台初始化
     void InitializeMSs();
     ///移动台管理类每TTI进行的操作
     void WorkSlot();
     ///由MS的ID得到MS的引用
     MS& GetMS(int _id);
+    ///20260119
+    vector<std::shared_ptr<MS> >& GetpMS();
     ///获得系统中MS的数量
     int CountMS()const;
     ///添加移动台

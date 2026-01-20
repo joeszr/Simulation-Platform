@@ -5,6 +5,11 @@
 #include "P.h"
 
 using namespace cm;
+///20260119
+///20260119
+///PathLossIndoorHotspotLOS构造函数
+PathLossIndoorHotspotLOS_ModeB::PathLossIndoorHotspotLOS_ModeB(void) {
+}
 
 ///计算DB值
 double PathLossIndoorHotspotLOS_ModeB::Db( double _dDisM , double _dUEHeightM){

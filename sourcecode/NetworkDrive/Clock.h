@@ -18,8 +18,7 @@ private:
 private:
     /// @brief 推动时钟前进函数
     void Forward();
-    /// @brief 重置
-    void Reset();
+
 
 public:
     /// @brief 获取当前时间,单位：时隙
@@ -27,6 +26,8 @@ public:
     int GetTimeSlotInSF()const;
     /// @brief 获取当前时间，单位：秒
     double GetTimeSec() const;
+    /// @brief 重置20261108
+    void Reset();
     //获取当前系统帧号
     int GetSFN() const;
     int GetSubFrame() const;

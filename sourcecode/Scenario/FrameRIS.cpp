@@ -1,7 +1,9 @@
 #include "FrameRIS.h"
+
+#include "Framework.h"
 #include "../NetworkDrive/Clock.h"
 #include "../ChannelModel/LinkMatrix.h"
-#include "../RIS/RISMatrix.h"
+#include "RIS/RISMatrix.h"
 #include "../Parameters/Parameters.h"
 #include "../Statistician/Statistician.h"
 #include "../DistributeMSAlgo/DistributeMSAlgo4indoor.h"
@@ -10,6 +12,7 @@
 #include "../DistributeMSAlgo/DistributeMSAlgoFile.h"
 #include "../DistributeMSAlgo/DistributeMSAlgoHexagon.h"
 #include "../DistributeMSAlgo/DistributeMSAlgoFix.h"
+#include"NetworkDrive/MSManager.h"
  ///构造函数
 FrameRIS::FrameRIS(void){
     switch (Parameters::Instance().BASIC.IMsDistributeMode) {

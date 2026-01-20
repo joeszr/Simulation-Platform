@@ -1419,6 +1419,8 @@ public:
     static const int SCENARIO_5G_DENSE_URBAN_2LAYER = 9;
     //20200115 	
     static const int SCENARIO_HighFreq_INDOOR_FACTORY = 10;
+    //20260119
+    static const int SCENARIO_RIS = 100;
 
     ///20171205 下面用于子信道判断for UMA 信道
     static const int SCENARIO_Phase1_UMA_mMTC = 10;

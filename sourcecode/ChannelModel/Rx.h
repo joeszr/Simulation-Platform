@@ -16,7 +16,7 @@ namespace cm{
     class AntennaOrientGain;
     ///Rx class
     class Rx : public Point{
-    protected:
+    public:
         Random random;
         ///RX的ID
         int m_iRxID;
@@ -34,7 +34,7 @@ namespace cm{
         double m_dRxOrientRAD; 
         int m_iAntNum; 
         double m_dInCarLossDB;
-
+        double m_SpeedSacleFactor;
         int static rxcounter;
         static SafeMap<int,Rx*> m_mRxID2PRx;
     public:

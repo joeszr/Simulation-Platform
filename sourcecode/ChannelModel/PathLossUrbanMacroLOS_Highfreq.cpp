@@ -15,6 +15,9 @@
 
 
 using namespace cm;
+///构造函数20260119
+PathLossUrbanMacroLOS_Highfreq::PathLossUrbanMacroLOS_Highfreq(void) {
+}
 
 ///计算DB值
 //

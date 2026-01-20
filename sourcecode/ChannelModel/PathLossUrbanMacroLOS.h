@@ -15,7 +15,7 @@ namespace cm {
         double Db(double _dDisM, double _dUEHeightM) override;
     public:
         /// @brief 构造函数
-        PathLossUrbanMacroLOS_ModeA() = default;
+        PathLossUrbanMacroLOS_ModeA()= default;
         /// @brief 析构函数
         ~PathLossUrbanMacroLOS_ModeA() override = default;
         

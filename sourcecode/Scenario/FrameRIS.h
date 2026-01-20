@@ -12,6 +12,7 @@
 
 #pragma once
 #include "OneLayerNetwork.h"
+#include"NetworkDrive/MSManager.h"
 
 class FrameRIS : public Framework{
 public:
@@ -22,6 +23,11 @@ public:
     FrameRIS(void);
     /// @breif 析构函数
     ~FrameRIS(void);
+
+    void PrintHead();
+
     void InitFrame();
+
+
 };
 

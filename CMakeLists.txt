@@ -416,6 +416,30 @@ add_executable(chty_tsm
 		sourcecode/ChannelModel/BSTx.h
 		sourcecode/ChannelModel/MSRx.cpp
 		sourcecode/ChannelModel/MSRx.h
+		sourcecode/Scenario/FrameRIS.cpp
+		sourcecode/Scenario/FrameRIS.h
+		sourcecode/Scenario/Framework.cpp
+		sourcecode/Scenario/Framework.h
+		sourcecode/Scenario/OneLayerNetwork.cpp
+		sourcecode/Scenario/OneLayerNetwork.h
+		sourcecode/Scenario/IndoorNetwork.cpp
+		sourcecode/Scenario/IndoorNetwork.h
+		sourcecode/Scenario/TwoLayerNetwork.cpp
+		sourcecode/Scenario/TwoLayerNetwork.h
+		sourcecode/Scenario/IndoorHotspot.cpp
+		sourcecode/Scenario/IndoorHotspot.h
+		sourcecode/Scenario/Scenario.cpp
+		sourcecode/Scenario/Scenario.h
+		sourcecode/Scenario/RuralMacro.cpp
+		sourcecode/Scenario/RuralMacro.h
+		sourcecode/Scenario/UrbanMacro.cpp
+		sourcecode/Scenario/UrbanMacro.h
+		sourcecode/Scenario/UrbanMicro.cpp
+		sourcecode/Scenario/UrbanMicro.h
+		sourcecode/Scenario/HetNet.cpp
+		sourcecode/Scenario/HetNet.h
+		sourcecode/Scenario/RISUrbanMacro.cpp
+		sourcecode/Scenario/RISUrbanMacro.h
 )
 
 

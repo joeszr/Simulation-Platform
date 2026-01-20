@@ -19,7 +19,7 @@ namespace cm{
         double Db( double _dDisM , double _dUEHeightM) final;
     public:
         ///构造函数
-        PathLossIndoorHotspotLOS_ModeB() = default;
+        PathLossIndoorHotspotLOS_ModeB();
         ///析构函数
         ~PathLossIndoorHotspotLOS_ModeB() override = default;
     };

@@ -34,6 +34,214 @@ void BSManager::AddBSs() {
         m_BSs[i].AddBTSs();
     }
 }
+///20260118
+void BSManager::AddRISs() {
+    for (int i = 0; i < Parameters::Instance().BASIC.INumBSs; ++i) {
+        m_BSs[i].AddRISs();
+    }
+}
+
+///20260118
+
+void BSManager::DistributeRISs(){
+    int iNumBSs = Parameters::Instance().BASIC.INumBSs;
+    //部署RIS
+    //第0个小区RIS分布
+    double dRadius = Parameters::Instance().Macro.DCellRadiusM;
+    //单扇区RIS数获取
+    //需根据RIS类进行确定
+    const int RISnum = Parameters::Instance().BASIC.IRISPerBTS;
+    //RISdistance是ris到扇区中心的距离
+    double RISdistance;
+    //撒点内径和外径
+    double minR=Parameters::Instance().RIS.DistributeHexagon_Min_Radiu;
+    double maxR=Parameters::Instance().RIS.DistributeHexagon_Max_Radiu;
+    assert(maxR>minR);
+    /// 采用数组方式实现一次性存储一个扇区中的RIS位置
+    double dx[Parameters::Instance().BASIC.IBTSPerBS][RISnum], dy[Parameters::Instance().BASIC.IBTSPerBS][RISnum];//单小区中RIS的相对位置位置
+//    switch(Parameters::Instance().BASIC.IRISCASE){
+//        //case 1
+//        case 1:
+//            //ris距离基站的距离
+//            RISdistance = 1/sqrt(3) * dRadius / sqrt(3);
+//            for (int j = 0; j < RISnum; ++j){
+////               double t = 0.0;
+//                double t = -1.0 / 6.0 * M_PI + 1.0 / 3.0 * M_PI * j / (RISnum-1);
+//                xtemp[j] = RISdistance * cos(t);
+//                ytemp[j] = RISdistance * sin(t);
+//            }
+//            break;
+//        //case 2
+//        case 2:
+//            //ris距离矩形中心的距离
+//            RISdistance = 0.9 * dRadius / sqrt(3);
+//            for (int j = 0; j < 4; ++j){
+//                double t = 1.0 / 4.0 * M_PI + 2.0 * M_PI * j / 4.0;
+//                xtemp[j] = RISdistance * cos(t) + dRadius/sqrt(3);
+//                ytemp[j] = RISdistance * sin(t);
+//            }
+//            break;
+//        case 3:
+//            for (int j = 0; j < RISnum; ++j){
+//                double rx = xUniform_distributems(-1, 0);
+//                double ry = xUniform_distributems(0, 1);
+//
+//                int randomside = floor(xUniform_distributems(0, 2));
+//                if(randomside==0){
+//                    rx = xUniform_distributems(-1, -0.9);
+//                }else if(randomside==1){
+//                    ry = xUniform_distributems(0.9, 1);
+//                }else{
+//                    assert(false);
+//                }
+//
+//                ytemp[j] = dRadius * 0.5 * sqrt(3) * ry;
+//                xtemp[j] = dRadius * rx + ytemp[j] / M_SQRT3;
+//            }
+//            break;
+//        //参数错误
+//        default:
+//            assert(false);
+//            break;
+//    }
+//    //扇区旋转
+//    for (int i = 0; i < Parameters::Instance().BASIC.IBTSPerBS; ++i){
+//        for (int j = 0; j < RISnum; ++j){
+//            double orient = 2.0 / 3 * M_PI * i;
+//            dx[i][j] = xtemp[j] * cos(orient) - ytemp[j] * sin(orient);
+//            dy[i][j] = ytemp[j] * cos(orient) + xtemp[j] * sin(orient);
+//        }
+//    }
+//    for (int i = 0; i < iNumBSs; ++i) {
+//        BS& bs = GetBS(i);
+//        double x = bs.GetX();
+//        double y = bs.GetY();
+//        for (int j = 0; j < Parameters::Instance().BASIC.IBTSPerBS; ++j) {
+//            BTS& bts = bs.GetBTS(j);
+//            double ris_x[RISnum], ris_y[RISnum];
+//            for (int k = 0; k < RISnum; ++k){
+//                RIS& ris = bts.GetRIS(k);//根据类的形式需要做相应的调整???
+//                ris_x[k] = dx[j][k] + x;
+//
+//                ris_y[k] = dy[j][k] + y;
+//
+//                ris.SetXY(ris_x[k], ris_y[k]);
+//                ris.ptx->SetXY(ris_x[k], ris_y[k]);
+//                ris.prx->SetXY(ris_x[k], ris_y[k]);
+////                ris.SetOrientRAD(5/4*M_PI+k*M_PI/2);
+////                double orient = 2.0 / 3 * M_PI * j;
+//                ris.SetOrientRAD(xUniform_distributems(0, 2)*M_PI);
+////                ris.SetOrientRAD(M_PI/2+1.0/3*M_PI-k*5.0/3*M_PI+orient);
+//
+//
+////                        Observer::Print("RIS_Position") << ris_x[k] << setw(20) << ris_y[k] << endl;
+//            }
+//        }
+//    }
+    for (int i = 0; i < iNumBSs; ++i) {
+        BS& bs = GetBS(i);
+        double x = bs.GetX();
+        double y = bs.GetY();
+        for (int j = 0; j < Parameters::Instance().BASIC.IBTSPerBS; ++j) {
+            BTS& bts = bs.GetBTS(j);
+
+            double ris_x[RISnum], ris_y[RISnum];
+            //1+0修改
+            int realNum=bts.GetRISNum();
+            for (int k = 0; k < realNum; ++k){
+                RIS& ris = bts.GetRIS(k);//根据类的形式需要做相应的调整???
+                int id=ris.GetRISID().GetTotalIndex();
+                double rx = xUniform_distributems(-1, 0);
+                double ry = xUniform_distributems(0, 1);
+
+                int randomside = floor(xUniform_distributems(0, 2));
+//                if(randomside==0){
+//                    rx = xUniform_distributems(-0.8, -0.75);
+//                    ry = xUniform_distributems(0.0, 0.8);
+//                }else if(randomside==1){
+//                    rx = xUniform_distributems(-0.8, 0.0);
+//                    ry = xUniform_distributems(0.75, 0.8);
+//                }else{
+//                    assert(false);
+//                }
+                if(randomside==0){
+                    rx = xUniform_distributems(-maxR, -minR);
+                    ry = xUniform_distributems(0, maxR);
+                }else if(randomside==1){
+                    rx = xUniform_distributems(-maxR, 0);
+                    ry = xUniform_distributems(minR, maxR);
+                }else{
+                    assert(false);
+                }
+//                rx = -1.0;
+//                ry = 1.0;
+
+                double y_temp = dRadius * 0.5 * sqrt(3) * ry;
+                double x_temp = dRadius * rx + y_temp / M_SQRT3;
+
+            double orient = -2.0 / 3 * M_PI+2.0 / 3 * M_PI * j;
+            dx[j][k] = x_temp * cos(orient+ M_PI / 6) - y_temp * sin(orient+ M_PI / 6);
+            dy[j][k] = y_temp * cos(orient+ M_PI / 6) + x_temp * sin(orient+ M_PI / 6);
+
+            bool ris_distance_requirement = false;
+            while(!ris_distance_requirement){
+                ris_distance_requirement = true;
+                for(int m=0; m<k; m++){
+                    double risdistance = sqrt(pow(dx[j][k] - dx[j][m], 2.0) + pow(dy[j][k] - dy[j][m], 2.0));
+                    if(risdistance< 0.1*dRadius){
+                        ris_distance_requirement = false;
+                    }
+                }
+                if(!ris_distance_requirement){
+                    randomside = floor(xUniform_distributems(0, 2));
+                    if(randomside==0){
+                    rx = xUniform_distributems(-maxR, -minR);
+                    ry = xUniform_distributems(0, maxR);
+                    }else if(randomside==1){
+                    rx = xUniform_distributems(-maxR, 0);
+                    ry = xUniform_distributems(minR, maxR);
+                    }else{
+                    assert(false);
+                    }
+                    y_temp = dRadius * 0.5 * sqrt(3) * ry;
+                    x_temp = dRadius * rx + y_temp / M_SQRT3;
+
+                    dx[j][k] = x_temp * cos(orient+ M_PI / 6) - y_temp * sin(orient+ M_PI / 6);
+                    dy[j][k] = y_temp * cos(orient+ M_PI / 6) + x_temp * sin(orient+ M_PI / 6);
+                }
+            }
+
+                ris_x[k] = dx[j][k] + x;
+
+                ris_y[k] = dy[j][k] + y;
+
+                ris.SetXY(ris_x[k], ris_y[k]);
+
+                Observer::Print("RIS_Position") << ris_x[k] << setw(20) << ris_y[k] << endl;
+
+                double angle = std::arg(std::complex <double>(dx[j][k], dy[j][k]));
+
+//                if(randomside==0){
+//                    ris.SetOrientRAD(1.0/6*M_PI+orient+ M_PI / 6);
+//                }else if(randomside==1){
+//                    ris.SetOrientRAD(7.0/6*M_PI+orient+ M_PI / 6);
+//                }else{
+//                    assert(false);
+//                }
+
+                if(randomside==0){
+                    ris.SetOrientRAD(angle+ M_PI);
+                }else if(randomside==1){
+                    ris.SetOrientRAD(angle+ M_PI);
+                }else{
+                    assert(false);
+                }
+
+            }
+        }
+    }
+
+}
 
 ///基站初始化
 

@@ -272,7 +272,19 @@ int xUniformInt(const int _imin, const int _imax) {
 double xUniform_distributems(double _dmin, double _dmax) {
     return Random::xUniform_distributems(_dmin, _dmax);
 }
-
+///20260119
+double xUniform_distributepico(double _dmin, double _dmax) {
+    Random random;
+    return random.xUniform_distributepico(_dmin, _dmax);  // 修复：使用对象实例调用方法
+}
+double xNormal_channel(double _dave, double _dstd) {
+    Random random;
+    return random.xNormal_channel(_dave, _dstd);
+}
+double xNormal_msconstruct(double _dave, double _dstd) {
+    Random random;
+    return random.xNormal_msconstruct(_dave, _dstd);
+}
 /// 线性值到DB值的转换
 double L2DB(double _dLinear) {
     return 10 * log10(_dLinear);

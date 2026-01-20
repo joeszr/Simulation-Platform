@@ -7,10 +7,12 @@
 #include "../Parameters/Parameters.h"
 
 using namespace cm;
-
+///构造函数
+PathLossUrbanMacroNLOS_Highfreq::PathLossUrbanMacroNLOS_Highfreq( void ){
+}
 double PathLossUrbanMacroNLOS_Highfreq::Db( double _dDisM_3D , double _dUEHeightM){
     assert( P::s().MacroTX.DAntennaHeightM == 25 );
-//    assert( P::s().RX.DAntennaHeightM == 1.5 );    
+//    assert( P::s().RX.DAntennaHeightM == 1.5 );
 
     assert(_dUEHeightM <= 22.5 && _dUEHeightM >= 1.5);
     

@@ -5,8 +5,10 @@
 #include "P.h"
 
 using namespace cm;
-
-///计算DB值
+///构造函数
+PathLossIndoorHotspotNLOS_ModeB::PathLossIndoorHotspotNLOS_ModeB( void ){
+}
+///计算DB值 发射节点和接收端节点之间的大尺度衰落
 double PathLossIndoorHotspotNLOS_ModeB::Db(double _dDisM, double _dUEHeightM) {
     assert(3 <= P::s().MacroTX.DAntennaHeightM && P::s().MacroTX.DAntennaHeightM <= 6);
     assert(1 <= P::s().RX.DAntennaHeightM && P::s().RX.DAntennaHeightM <= 2.5);

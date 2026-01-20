@@ -26,18 +26,34 @@ private:
 public:
     ///存储所有基站的容器
     vector<BS> m_BSs;
-    ///
+    ///20260119
+    vector<std::shared_ptr<BS> > m_vpBS;
+    map<MacroID, vector<cm::Point> > mMacroID2ClustersPos2;
     std::unordered_map<int, vector<cm::Point> > mMacroID2ClustersPos;
     ///由BSID得到BS的引用
 
     BS& GetBS(const int& BSID) {
         return m_BSs[BSID];
     };
+
+///20260119
+    vector<std::shared_ptr<BS> >& GetvpBS() {
+        return m_vpBS;
+    };
+    map<MacroID, vector<cm::Point> >& GetClusterPos() {
+        return mMacroID2ClustersPos2;
+    };
+
     ///由BTSID得到BTS引用
     BTS& GetBTS(const BTSID& _btsid);
     ///
     ///在系统中增加BS
     void AddBSs();
+    ///在系统中增加RIS20260118
+    void AddRISs();
+
+    void DistributeRISs();
+
     ///初始化BS分布位置
     void DistributeBSs();
     ///基站初始化
