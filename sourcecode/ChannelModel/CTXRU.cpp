@@ -124,7 +124,11 @@ void CTXRU::Build_UE_TXRU(int _type) {
 }
 
 std::shared_ptr<AntennaPanel> CTXRU::GetFatherAntennaPanelPointer() {
-    return m_pFatherAntennaPanel;
+    // AntennaPanel 继承自 enable_shared_from_this，可以使用 shared_from_this
+    if (m_pFatherAntennaPanel) {
+        return m_pFatherAntennaPanel->shared_from_this();
+    }
+    return nullptr;
 }
 
 double CTXRU::Get_LCS_TXRU_LB_H_Offset_lamda_in_Antenna() const {

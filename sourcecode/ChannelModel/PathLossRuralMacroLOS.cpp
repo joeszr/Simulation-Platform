@@ -6,10 +6,6 @@
 #include "P.h"
 
 using namespace cm;
-///构造函数
-PathLossRuralMacroLOS_ModeA::PathLossRuralMacroLOS_ModeA(void) {
-}
-
 ///计算DB值
 double PathLossRuralMacroLOS_ModeA::Db( double _dDisM_3D , double _dUEHeightM){
    //assert( P::s().MacroTX.DAntennaHeightM == 35 );
