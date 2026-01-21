@@ -525,6 +525,11 @@ void SpaceChannelState::step11_B(int path_index) {
 
 }
 
+void SpaceChannelState::UpdateH(double _dTimeSec) {
+    // 调用带beampair的版本，使用默认beampair (-1, -1) 表示所有beam
+    UpdateH(_dTimeSec, std::make_pair(-1, -1));
+}
+
 void SpaceChannelState::UpdateH(double _dTimeSec, pair<int, int> beampair) {
     double _dTime_ms = _dTimeSec * 1000;
 
@@ -1132,4 +1137,9 @@ void SpaceChannelState::UpdateH4AllSC() {
 }
 //chty 1111 e
 
+void SpaceChannelState::CalculateRSRP_RIS() {
+    // RIS场景下的RSRP计算，暂时使用与CalculateRSRP_new相同的实现
+    // 如果需要特殊处理RIS场景，可以在这里添加
+    CalculateRSRP_new();
+}
 

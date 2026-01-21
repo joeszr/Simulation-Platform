@@ -29,6 +29,16 @@ Tx::Tx(const Tx& _tx) {
     ++txcounter;
 }
 
+Tx::Tx(Point& _point) {
+    SetX(_point.GetX());
+    SetY(_point.GetY());
+    m_iTxID = txcounter++;
+    m_mTxID2PTx[m_iTxID] = this;
+    m_dTxHeight = 0;
+    Build_BS_Antenna();
+    assert(m_pAntenna != nullptr);
+}
+
 Tx::~Tx() {
     --txcounter;
 }

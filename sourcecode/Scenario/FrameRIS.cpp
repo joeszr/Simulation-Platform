@@ -113,3 +113,8 @@ void FrameRIS::InitFrame(){
     }*/
 }
 
+void FrameRIS::PrintHead() {
+    // 调用基类的PrintHead方法
+    Framework::PrintHead();
+}
+

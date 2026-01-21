@@ -8,6 +8,10 @@
 #include <cassert>
 using namespace std;
 
+// 定义静态成员变量
+unsigned Random::pseudo_seed = 0;
+bool Random::_on = false;
+
 double Random::xUniform(double _dmin, double _dmax) {
     //static std::mutex lock;
     //std::lock_guard<std::mutex> l(lock);

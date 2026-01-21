@@ -56,6 +56,21 @@ Rx::Rx(const Rx& _rx) {
     ++rxcounter;
    // std::cout<<"rxcounter2  "<<rxcounter<<std::endl;
 }
+
+Rx::Rx(Point& _point) {
+    SetX(_point.GetX());
+    SetY(_point.GetY());
+    m_iSpecial = 0;
+    m_iIsLowloss = -1;
+    m_dInCarLossDB = 0;
+    m_iRxID = rxcounter++;
+    m_mRxID2PRx[m_iRxID] = this;
+    m_dRxHeight = P::s().RX.DAntennaHeightM;
+    m_iTotalFloorNum = 0;
+    m_iFloorNum = 0;
+    type = 1;
+    Build_UE_Antenna();
+}
 ///虚析构函数的实现
 
 Rx::~Rx() {
