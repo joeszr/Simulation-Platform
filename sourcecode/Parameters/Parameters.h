@@ -1437,6 +1437,7 @@ public:
     static const int SCENARIO_Phase2_RMA = 18;
     static const int SCENARIO_Phase1_InH_LF = 19;
     static const int SCENARIO_Phase2_InH_LF = 20;
+    static const int SCENARIO_RIS = 21;
 
     static const int SERVICEAREA_HEXAGONAL7CELL = 0;
     static const int SERVICEAREA_HEXAGONAL19CELL = 1;
