@@ -7,7 +7,7 @@
 
 using namespace cm;
 ///构造函数
-PathLossUrbanMacroLOS::PathLossUrbanMacroLOS(void) {
+PathLossRuralMacroLOS_ModeA::PathLossRuralMacroLOS_ModeA(void) {
 }
 
 ///计算DB值

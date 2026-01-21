@@ -123,7 +123,7 @@ void CTXRU::Build_UE_TXRU(int _type) {
     //chty 1111 e
 }
 
-AntennaPanel* CTXRU::GetFatherAntennaPanelPointer() {
+std::shared_ptr<AntennaPanel> CTXRU::GetFatherAntennaPanelPointer() {
     return m_pFatherAntennaPanel;
 }
 

@@ -56,8 +56,6 @@ namespace cm {
         /// @param _dTimeSec 信道信息对应的时刻，单位秒
         void WorkSlot(double _dTimeSec) const;
 
-        void Initialize( Tx & tx,  RIS & ris);
-
     public:
         /// @brief 构造函数
         ChannelState();
