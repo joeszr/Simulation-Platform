@@ -36,8 +36,8 @@ private:
 public:
     /// @brief 取发射器的ID序号
     RISID GetRISID();
-    cm::TxNode& GetTx();
-    cm::RxNode& GetRx();
+    cm::Tx& GetTx();
+    cm::Rx& GetRx();
     /// @brief 返回发射器的总对象个数
     static int CountRIS();
     void SetOrientRAD(double _angle);
