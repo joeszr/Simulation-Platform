@@ -18,7 +18,7 @@ include_directories(/usr/local/include)
 
 
 link_directories(/usr/lib/x86_64-linux-gnu)
-#link_directories(/usr/local/lib)
+link_directories(/usr/local/lib)
 
 add_executable(chty_tsm
         sourcecode/BaseStation/ACKNAKMessageUL.cpp
@@ -443,7 +443,7 @@ add_executable(chty_tsm
 )
 
 
-target_link_libraries(chty_tsm libboost_system.so libboost_thread.so libboost_chrono.so libpthread.so  libitpp.so.6 libboost_filesystem.so)
+target_link_libraries(chty_tsm boost_system boost_thread boost_chrono pthread itpp boost_filesystem)
 target_link_libraries(chty_tsm /usr/lib/x86_64-linux-gnu/libblas.so.3) #如果用到itpp::vec的operator=运算，好像要加上这个库
 #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 #set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -lasan -lstdc++ ")

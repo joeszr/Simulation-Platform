@@ -2,25 +2,14 @@
 <project version="4">
   <component name="PublishConfigData" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
-      <paths name="lenovo (44bbed19-9726-4a60-8095-871141499c12)">
+      <paths name="远程主机 (f33cfeb1-5c18-40b1-950b-1ce3ba63b6e3)">
         <serverdata>
           <mappings>
-            <mapping deploy="/zcyupris" local="$PROJECT_DIR$" />
+            <mapping deploy="/tmp/tmp.1IQXgZ84ht/Simulation-Platform" local="$PROJECT_DIR$" />
           </mappings>
           <excludedPaths>
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-lenovo" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release-lenovo" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-release-lenovo" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-lenovo" />
           </excludedPaths>
-        </serverdata>
-      </paths>
-      <paths name="远程主机 (a87275cb-5a17-4b8e-841f-d009cdd2ba06)">
-        <serverdata>
-          <mappings>
-            <mapping local="$PROJECT_DIR$" web="/" />
-          </mappings>
         </serverdata>
       </paths>
     </serverData>
