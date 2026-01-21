@@ -167,7 +167,7 @@ double Random::xNormal_error(double _dave, double _dstd) {
         seed = pseudo_seed++;
     }
     default_random_engine engine_xNormal_error(seed);
-    normal_distribution<double> _xNormal_error(_dave, _dstd);
+    std::normal_distribution<double> _xNormal_error(_dave, _dstd);
     return _xNormal_error(engine_xNormal_error);
 }
 //UL_end
@@ -184,7 +184,7 @@ double Random::xNormal(double _dave, double _dstd) {
         seed = pseudo_seed++;
     }
     default_random_engine engine_xNormal(seed);
-    normal_distribution<double> _xNormal(_dave, _dstd);
+    std::normal_distribution<double> _xNormal(_dave, _dstd);
     return _xNormal(engine_xNormal);
 }
 
@@ -200,7 +200,7 @@ double Random::xNormal_channel(double _dave, double _dstd) {
         seed = pseudo_seed++;
     }
     default_random_engine engine_xNormal_channel(seed);
-    normal_distribution<double> _xNormal_channel(_dave, _dstd);
+    std::normal_distribution<double> _xNormal_channel(_dave, _dstd);
     return _xNormal_channel(engine_xNormal_channel);
 }
 
@@ -216,7 +216,7 @@ double Random::xNormal_SRSError(double _dave, double _dstd) {
         seed = pseudo_seed++;
     }
     default_random_engine engine_xNormal_SRSError(seed);
-    normal_distribution<double> _xNormal_SRSError(_dave, _dstd);
+    std::normal_distribution<double> _xNormal_SRSError(_dave, _dstd);
     return _xNormal_SRSError(engine_xNormal_SRSError);
 }
 
@@ -232,7 +232,7 @@ double Random::xNormal_DMRSError(double _dave, double _dstd) {
         seed = pseudo_seed++;
     }
     default_random_engine engine_xNormal_DMRSError(seed);
-    normal_distribution<double> _xNormal_DMRSError(_dave, _dstd);
+    std::normal_distribution<double> _xNormal_DMRSError(_dave, _dstd);
     return _xNormal_DMRSError(engine_xNormal_DMRSError);
 }
 
@@ -248,7 +248,7 @@ double Random::xNormal_AntCalibrationError(double _dave, double _dstd) {
         seed = pseudo_seed++;
     }
     default_random_engine engine_xNormal_AntCalibrationError(seed);
-    normal_distribution<double> _xNormal_AntCalibrationError(_dave, _dstd);
+    std::normal_distribution<double> _xNormal_AntCalibrationError(_dave, _dstd);
     return _xNormal_AntCalibrationError(engine_xNormal_AntCalibrationError);
 }
 
@@ -264,7 +264,7 @@ double Random::xNormal_Other(double _dave, double _dstd) {
         seed = pseudo_seed++;
     }
     default_random_engine engine_xNormal_Other(seed);
-    normal_distribution<double> _xNormal_Other(_dave, _dstd);
+    std::normal_distribution<double> _xNormal_Other(_dave, _dstd);
     return _xNormal_Other(engine_xNormal_Other);
 }
 
@@ -280,7 +280,7 @@ double Random::xNormal_msconstruct(double _dave, double _dstd) {
         seed = pseudo_seed++;
     }
     default_random_engine engine_xNormal_msconstruct(seed);
-    normal_distribution<double> _xNormal_msconstruct(_dave, _dstd);
+    std::normal_distribution<double> _xNormal_msconstruct(_dave, _dstd);
     return _xNormal_msconstruct(engine_xNormal_msconstruct);
 }
 
@@ -312,7 +312,7 @@ double Random::xExponent(double _dlamda) {
         seed = pseudo_seed++;
     }
     default_random_engine engine_newExponent(seed);
-    exponential_distribution<double> _newExponent(_dlamda);
+    std::exponential_distribution<double> _newExponent(_dlamda);
     return _newExponent(engine_newExponent);
 }
 
@@ -329,6 +329,6 @@ int Random::xPossion_DL(double _ave) {
     }
     default_random_engine engine_xPossion_DL(seed);
 
-    poisson_distribution<int> _xPossion_DL(_ave);
+    std::poisson_distribution<int> _xPossion_DL(_ave);
     return _xPossion_DL(engine_xPossion_DL);
 }
