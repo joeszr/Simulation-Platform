@@ -45,6 +45,10 @@ SpaceChannelState::SpaceChannelState(BasicChannelState* _pBCS) {
 
     m_dStrongestCouplingLoss_Linear = 0;
 
+    // 初始化最佳面板指针为nullptr
+    m_pBest_BS_Panel = nullptr;
+    m_pBest_UE_Panel = nullptr;
+
     //正常设置
     m_H_updated_period_ms = Parameters::Instance().LINK_CTRL.Islot4Hupdate*Parameters::Instance().BASIC.DSlotDuration_ms; //
 
@@ -624,18 +628,56 @@ int SpaceChannelState::GetStrongestBSBeamIndex(
         AntennaPanel* _pBS_Panel,
         AntennaPanel* _pUE_Panel) {
 
-    return m_PanelPairID_2_StrongestBSBeamIndex(
-            _pBS_Panel->GetPanelIndex(),
-            _pUE_Panel->GetPanelIndex());
+    // 检查空指针
+    if (!_pBS_Panel || !_pUE_Panel) {
+        return -1; // 返回无效的beam索引
+    }
+
+    // 检查矩阵是否已初始化
+    if (m_PanelPairID_2_StrongestBSBeamIndex.rows() == 0 || 
+        m_PanelPairID_2_StrongestBSBeamIndex.cols() == 0) {
+        return -1;
+    }
+
+    int bsPanelIdx = _pBS_Panel->GetPanelIndex();
+    int uePanelIdx = _pUE_Panel->GetPanelIndex();
+
+    // 检查索引边界
+    if (bsPanelIdx < 0 || uePanelIdx < 0 ||
+        bsPanelIdx >= m_PanelPairID_2_StrongestBSBeamIndex.rows() ||
+        uePanelIdx >= m_PanelPairID_2_StrongestBSBeamIndex.cols()) {
+        return -1;
+    }
+
+    return m_PanelPairID_2_StrongestBSBeamIndex(bsPanelIdx, uePanelIdx);
 }
 
 int SpaceChannelState::GetStrongestUEBeamIndex(
         AntennaPanel* _pBS_Panel,
         AntennaPanel* _pUE_Panel) {
 
-    return m_PanelPairID_2_StrongestUEBeamIndex(
-            _pBS_Panel->GetPanelIndex(),
-            _pUE_Panel->GetPanelIndex());
+    // 检查空指针
+    if (!_pBS_Panel || !_pUE_Panel) {
+        return -1; // 返回无效的beam索引
+    }
+
+    // 检查矩阵是否已初始化
+    if (m_PanelPairID_2_StrongestUEBeamIndex.rows() == 0 || 
+        m_PanelPairID_2_StrongestUEBeamIndex.cols() == 0) {
+        return -1;
+    }
+
+    int bsPanelIdx = _pBS_Panel->GetPanelIndex();
+    int uePanelIdx = _pUE_Panel->GetPanelIndex();
+
+    // 检查索引边界
+    if (bsPanelIdx < 0 || uePanelIdx < 0 ||
+        bsPanelIdx >= m_PanelPairID_2_StrongestUEBeamIndex.rows() ||
+        uePanelIdx >= m_PanelPairID_2_StrongestUEBeamIndex.cols()) {
+        return -1;
+    }
+
+    return m_PanelPairID_2_StrongestUEBeamIndex(bsPanelIdx, uePanelIdx);
 }
 
 //20180615
