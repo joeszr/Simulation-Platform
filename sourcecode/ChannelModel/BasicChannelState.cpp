@@ -25,7 +25,27 @@ size_t cm::POSHash(const POS& pos){
 size_t cm::KEYHash(const KEY& key){
     return POSHash(key.first) ^ POSHash(key.second);
 }
-cm::LinkMatrix& lm = cm::LinkMatrix::Instance();
+///20260126
+// 修复静态初始化顺序问题：完全移除全局变量的立即初始化
+// 问题：全局变量的初始化会在静态初始化阶段立即执行，会触发整个调用链：
+// LinkMatrix::Instance() -> LinkMatrix 构造函数 -> Random 构造函数 -> Parameters::Instance() -> ConfigureArgs()
+// 这会导致在标准库未完全初始化时使用输出流，造成程序崩溃
+// 解决方案：使用函数返回引用，但全局变量本身不进行初始化
+// 注意：由于 RISCouplingloss.cpp 中有 extern LinkMatrix& lm 声明，我们必须提供定义
+// 但我们不能立即初始化，否则仍会在静态初始化阶段触发问题
+// 使用一个技巧：定义一个未初始化的全局变量，在第一次使用时通过函数初始化
+// 但这在 C++ 中不可行，因为引用必须在定义时初始化
+// 最终方案：保留全局变量，但延迟其初始化到第一次实际使用时
+// 通过使用函数返回静态局部变量，确保初始化只发生在第一次调用时
+// 但全局变量本身的初始化仍然会在静态初始化阶段调用函数
+// 因此，我们必须在 ConfigureArgs() 中完全跳过输出操作，如果是在静态初始化阶段调用
+cm::LinkMatrix& GetLinkMatrixInstance() {
+    static cm::LinkMatrix& lm_ref = cm::LinkMatrix::Instance();
+    return lm_ref;
+}
+// 全局引用，通过函数延迟初始化
+
+cm::LinkMatrix& lm = GetLinkMatrixInstance();
 std::shared_ptr<GaussianMap> BasicChannelState::m_pDSMapLOS;
 std::shared_ptr<GaussianMap> BasicChannelState::m_pAODMapLOS;
 std::shared_ptr<GaussianMap> BasicChannelState::m_pAOAMapLOS;

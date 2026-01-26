@@ -154,7 +154,7 @@ namespace cm {
         /// @param _rx 接收者引用
         /// @param _dTimeSec 信道状态的时间点，（单位：秒）
         void WorkSlot(Rx& _rx, double _dTimeSec);
-
+///20260120
         void WorkSlot_RIS(double t);
 
         /// @brief 返回计算路径损耗的函数
@@ -162,6 +162,8 @@ namespace cm {
         /// @param _rx 接收者引用
         /// @return 一个可以计算路径损耗的智能指针
         std::shared_ptr<PathLoss> GetPathLossFun(Tx& _tx, Rx& _rx, bool _bIsLOS);
+///20260120
+       // std::pair<int, int> GetStrongestBeamPair(Tx& _tx, Rx& _rx);
         void SetPos2Din(Tx& _tx, Rx& _rx);
         double GetPos2Din(std::pair<int, int> & _pos);
 

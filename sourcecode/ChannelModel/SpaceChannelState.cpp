@@ -726,7 +726,9 @@ void SpaceChannelState::CalculateRSRP_new() {
     m_PanelPairID_2_StrongestUEBeamIndex = itpp::ones_i(
             pBSAntenna->GetTotalAntennaPanel_Num(),
             pUEAntenna->GetTotalAntennaPanel_Num()) * (-1);
-
+    map<pair<int,int>,double> mBeam2Couplingloss;
+    //改为临时变量
+    double m_dStrongestCouplingLoss_Linear = 0;
     BOOST_FOREACH(std::shared_ptr<AntennaPanel> pBSAntennaPanel,
             pBSAntenna->GetvAntennaPanels()) {
 
@@ -779,6 +781,15 @@ void SpaceChannelState::CalculateRSRP_new() {
             }
         }
     }
+    //20260126
+    StrongBeam(mBeam2Couplingloss);
+    pair<int, int> beampair = make_pair(GetStrongestBSBeamIndex(m_pBest_BS_Panel, m_pBest_UE_Panel),
+                                        GetStrongestUEBeamIndex(m_pBest_BS_Panel, m_pBest_UE_Panel));
+    //测试结果用smaller可以返回最大值,用bigger会返回最小值
+    map<pair<int,int>, double>::iterator it = max_element(mBeampair2Couplingloss_Linear.begin(), mBeampair2Couplingloss_Linear.end(), smaller);
+    bool case1 = (it->second == m_dStrongestCouplingLoss_Linear);
+    bool case2 = (it->first == beampair);
+    assert(case1 && case2);
 }
 
 //itpp::cmat SpaceChannelState::GetH_for_subcarrier_and_TXRUPair(

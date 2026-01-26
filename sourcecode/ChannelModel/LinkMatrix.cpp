@@ -290,7 +290,7 @@ void LinkMatrix::WorkSlot(Rx& _rx, double _dTimeSec) {
     }
 }
 //20251112
-
+///20260120
 void LinkMatrix::WorkSlot_RIS(double t) {
     // Tx→RIS
     for (auto &kv : m_TxRIS2CS) kv.second.WorkSlot(t);

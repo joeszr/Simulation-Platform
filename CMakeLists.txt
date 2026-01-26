@@ -14,6 +14,8 @@ include_directories(sourcecode/Scheduler)
 include_directories(sourcecode/Statistician)
 include_directories(sourcecode/TrafficModel)
 include_directories(sourcecode/Utility)
+include_directories(sourcecode/RIS)
+include_directories(sourcecode/Scenario)
 include_directories(/usr/local/include)
 
 
@@ -369,10 +371,11 @@ add_executable(chty_tsm
 		sourcecode/BaseStation/RRC/RRC_Include.h
 		sourcecode/DRX.cpp
 		sourcecode/DRX.h
-		sourcecode/CalcRENumperRB.cpp
-		sourcecode/CalcRENumperRB.h
-		sourcecode/Scheduler/UL_SchedulingRenewal.cpp sourcecode/Scheduler/UL_SchedulingRenewal.h
-		sourcecode/Statistician/Statistics.cpp
+	sourcecode/CalcRENumperRB.cpp
+	sourcecode/CalcRENumperRB.h
+	sourcecode/Scheduler/UL_SchedulingRenewal.cpp
+	sourcecode/Scheduler/UL_SchedulingRenewal.h
+	sourcecode/Statistician/Statistics.cpp
 		sourcecode/Statistician/Statistics.h
 		sourcecode/RIS/RISMatrix.h
 		sourcecode/RIS/RISMatrix.cpp
@@ -448,3 +451,4 @@ target_link_libraries(chty_tsm /usr/lib/x86_64-linux-gnu/libblas.so.3) #如果�
 #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 #set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -lasan -lstdc++ ")
 #target_link_libraries(chty_tsm asan )
+set( CMAKE_BUILD_TYPE Debug )

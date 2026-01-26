@@ -38,6 +38,11 @@ FrameRIS::FrameRIS(void){
 FrameRIS::~FrameRIS(void){
 }
 
+///打印输出表的表头
+void FrameRIS::PrintHead() {
+    Framework::PrintHead();
+}
+
 ///基站位置分布初始化
 void FrameRIS::DistributeBSs() {
     StandardDistribute();
@@ -113,8 +118,8 @@ void FrameRIS::InitFrame(){
     }*/
 }
 
-void FrameRIS::PrintHead() {
-    // 调用基类的PrintHead方法
-    Framework::PrintHead();
-}
+// void FrameRIS::PrintHead() {
+//     // 调用基类的PrintHead方法
+//     Framework::PrintHead();
+// }
 

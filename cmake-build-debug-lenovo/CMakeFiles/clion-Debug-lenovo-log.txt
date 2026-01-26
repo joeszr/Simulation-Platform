@@ -1,4 +1,4 @@
-/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" -S /home/lenovo/zcyupris -B /home/lenovo/zcyupris/cmake-build-debug-lenovo
+/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "Unix Makefiles" -S /home/lenovo/tmp/tmp.uP3g4KbRzU/Simulation-Platform -B /home/lenovo/tmp/tmp.uP3g4KbRzU/Simulation-Platform/cmake-build-debug-lenovo
 -- Configuring done
 -- Generating done
--- Build files have been written to: /home/lenovo/zcyupris/cmake-build-debug-lenovo
+-- Build files have been written to: /home/lenovo/tmp/tmp.uP3g4KbRzU/Simulation-Platform/cmake-build-debug-lenovo

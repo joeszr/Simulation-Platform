@@ -259,9 +259,10 @@ double xUniform_msconstruct(double _dmin, double _dmax) {
 }
 
 
-///思考以下
+///20260120
 double xUniform_channel(double _dmin, double _dmax) {
-    return Random::xUniform_channel(_dmin, _dmax);
+    Random random;  // 创建 Random 对象
+    return random.xUniform_channel(_dmin, _dmax);  // 通过对象调用非静态成员函数
 }
 ///
 int xUniformInt(const int _imin, const int _imax) {
@@ -270,7 +271,8 @@ int xUniformInt(const int _imin, const int _imax) {
 }
 
 double xUniform_distributems(double _dmin, double _dmax) {
-    return Random::xUniform_distributems(_dmin, _dmax);
+    Random random;  // 创建 Random 对象
+    return random.xUniform_distributems(_dmin, _dmax);  // 通过对象调用非静态成员函数
 }
 ///20260119
 double xUniform_distributepico(double _dmin, double _dmax) {

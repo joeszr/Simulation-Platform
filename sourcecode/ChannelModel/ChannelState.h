@@ -55,7 +55,7 @@ namespace cm {
         /// @brief 更新信道信息到指定的时间节点
         /// @param _dTimeSec 信道信息对应的时刻，单位秒
         void WorkSlot(double _dTimeSec) const;
-
+        ///20260120缺少workSLot_RIS
     public:
         /// @brief 构造函数
         ChannelState();

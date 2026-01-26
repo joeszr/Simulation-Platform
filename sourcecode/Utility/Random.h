@@ -19,8 +19,8 @@ public:
     }
 public :
     double xUniform(double _dmin = 0, double _dmax = 1);
-    static double xUniform_channel(double _dmin = 0, double _dmax = 1);
-    static double xUniform_distributems(double _dmin = 0, double _dmax = 1);
+    double xUniform_channel(double _dmin = 0, double _dmax = 1);
+     double xUniform_distributems(double _dmin = 0, double _dmax = 1);
     double xUniform_detection(double _dmin = 0, double _dmax = 1);
 
     double xUniform_AntCalibrationError(double _dmin = 0, double _dmax = 1);
@@ -55,8 +55,9 @@ public :
 /// @param _dave 随机数的均值
     double xExponent(double _dlambda);
 
-/// 产生一个泊松分布的随机整数
-    int xPossion_DL(double _ave = 1);
+
+    /// 产生一个泊松分布的随机整数
+    int xPossion_DL(double _ave = 1) ;
 
 
 };

@@ -2394,6 +2394,24 @@ void Parameters::ConfigureArgs()
     MSS_UL.UL.BSR_RetransTimer          = 10;
     DaHuaWu.HeavyLoadUlCceAdjPolicy     = DaHuaWu_Para::RATIO_OPT;
 
+    // 修复静态初始化顺序问题：在静态初始化阶段完全跳过输出操作
+    // 问题：在程序启动的静态初始化阶段，标准库的 I/O 流可能尚未完全初始化
+    // 即使 Observer::m_bIsEnable 为 false，返回 ofsnull 时使用 << 操作符
+    // 仍可能触发标准库初始化（std::ostream::sentry 构造函数），导致程序崩溃
+    // try-catch 无法捕获这种情况，因为崩溃发生在标准库内部，不会抛出异常
+    // 解决方案：使用全局标志跟踪静态初始化状态，在静态初始化阶段完全跳过输出
+    // 使用函数局部静态变量来跟踪是否已经完成了静态初始化
+    // 第一次调用时（静态初始化阶段），跳过输出；但参数设置仍然执行
+    static bool s_bStaticInitPhase = true;
+    if (s_bStaticInitPhase) {
+        // 第一次调用发生在静态初始化阶段，完全跳过输出操作
+        // 参数设置已经完成，只是不进行输出
+        // 输出将在后续 RecordParameters_New() 中通过 Observer::SetIsEnable(true) 启用后正常进行
+        s_bStaticInitPhase = false;
+        return;  // 直接返回，不进行任何输出操作
+    }
+    
+    // 后续调用（正常运行阶段，虽然通常不会发生），可以安全地进行输出
     Observer::Print("DaHuaWuParas") <<"int : iOccupiedSymbolNum"<<setw(30)<<DaHuaWu.iOccupiedSymbolNum<<endl
                                     <<"int : iOccupiedRbNum"<<setw(30)<<DaHuaWu.iOccupiedRbNum<<endl
                                     <<"bool : bPdcchAlgoEnhSwitch"<<setw(30)<<DaHuaWu.bPdcchAlgoEnhSwitch<<endl
