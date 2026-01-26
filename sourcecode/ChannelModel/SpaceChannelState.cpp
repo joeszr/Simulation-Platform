@@ -906,6 +906,7 @@ itpp::cmat SpaceChannelState::GetH_after_ABF_for_all_active_TXRU_Pairs_RISIntf_B
 
         }
     }
+    return H_after_ABF;
 }
 
 std::complex<double> SpaceChannelState::GetH_after_ABF_with_BestBeams(
