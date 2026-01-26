@@ -11,13 +11,24 @@ using namespace std;
 // 定义静态成员变量
 unsigned Random::pseudo_seed = 0;
 bool Random::_on = false;
+bool Random::_on_initialized = false;
+
+// 懒加载方式获取_on的值，避免静态初始化顺序问题
+bool Random::GetOn() {
+    if (!_on_initialized) {
+        // 延迟初始化，此时Parameters应该已经初始化完成
+        _on = (Parameters::Instance().BASIC.ISeed != 0);
+        _on_initialized = true;
+    }
+    return _on;
+}
 
 double Random::xUniform(double _dmin, double _dmax) {
     //static std::mutex lock;
     //std::lock_guard<std::mutex> l(lock);
     assert(_dmax >= _dmin);
     unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -33,7 +44,7 @@ double Random::xUniform_channel(double _dmin, double _dmax) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dmax >= _dmin);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -49,7 +60,7 @@ double Random::xUniform_distributems(double _dmin, double _dmax) {
 //    std::lock_guard<std::mutex> l(lock);
     assert(_dmax >= _dmin);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -65,7 +76,7 @@ double Random::xUniform_detection(double _dmin, double _dmax) {
 //    std::lock_guard<std::mutex> l(lock);
     assert(_dmax >= _dmin);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -81,7 +92,7 @@ double Random::xUniform_AntCalibrationError(double _dmin, double _dmax) {
 //    std::lock_guard<std::mutex> l(lock);
     assert(_dmax >= _dmin);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -98,7 +109,7 @@ double Random::xUniform_distributepico(double _dmin, double _dmax) {
 //    std::lock_guard<std::mutex> l(lock);
     assert(_dmax >= _dmin);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -114,7 +125,7 @@ double Random::xUniform_msconstruct(double _dmin, double _dmax) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dmax >= _dmin);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -132,7 +143,7 @@ double Random::xUniform_Detection(double _dmin, double _dmax) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dmax >= _dmin);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -148,7 +159,7 @@ double Random::xUniform_DiffLoad(double _dmin, double _dmax) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dmax >= _dmin);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -164,7 +175,7 @@ double Random::xNormal_error(double _dave, double _dstd) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dstd >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -181,7 +192,7 @@ double Random::xNormal(double _dave, double _dstd) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dstd >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -197,7 +208,7 @@ double Random::xNormal_channel(double _dave, double _dstd) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dstd >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -213,7 +224,7 @@ double Random::xNormal_SRSError(double _dave, double _dstd) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dstd >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -229,7 +240,7 @@ double Random::xNormal_DMRSError(double _dave, double _dstd) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dstd >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -245,7 +256,7 @@ double Random::xNormal_AntCalibrationError(double _dave, double _dstd) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dstd >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -261,7 +272,7 @@ double Random::xNormal_Other(double _dave, double _dstd) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dstd >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -277,7 +288,7 @@ double Random::xNormal_msconstruct(double _dave, double _dstd) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dstd >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -293,7 +304,7 @@ int Random::xUniformInt(const int _imin,const int _imax) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_imax >= _imin);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -309,7 +320,7 @@ double Random::xExponent(double _dlamda) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_dlamda >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
@@ -325,7 +336,7 @@ int Random::xPossion_DL(double _ave) {
     //std::lock_guard<std::mutex> l(lock);
     assert(_ave >= 0);
         unsigned seed;
-    if(_on){
+    if(GetOn()){
         seed = std::chrono::system_clock::now().time_since_epoch().count();
     }
     else{
