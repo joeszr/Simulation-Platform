@@ -56,11 +56,14 @@ ofstream& Observer::Print(const MSID& _MSID) {
             return *m_mOfms[_MSID.ToInt()];
         } else {
             assert(false);
-            return ofsnull;
+            static ofstream null_stream;
+            return null_stream;
         }
 
-    } else
-        return ofsnull;
+    } else {
+        static ofstream null_stream;
+        return null_stream;
+    }
 }
 
 ///@brief 建立每个BS（用BS的ID标识）到输出流的对应函数
@@ -97,11 +100,14 @@ ofstream& Observer::Print(const BSID& _BSID) {
             return *m_mOfbts[_BSID.ToInt()];
         } else {
             assert(false);
-            return ofsnull;
+            static ofstream null_stream;
+            return null_stream;
         }
 
-    } else
-        return ofsnull;
+    } else {
+        static ofstream null_stream;
+        return null_stream;
+    }
 
 }
 
@@ -145,10 +151,13 @@ ofstream& Observer::Print(const BTSID& _BTSID) {
             return *m_mOfbts[_BTSID.ToInt()];
         } else {
             assert(false);
-            return ofsnull;
+            static ofstream null_stream;
+            return null_stream;
         }
-    } else
-        return ofsnull;
+    } else {
+        static ofstream null_stream;
+        return null_stream;
+    }
 
 }
 
@@ -182,8 +191,11 @@ ofstream& Observer::Print(const string& _str) {
         } else {
             return *m_mOfstr[_str];
         }
-    } else
-        return ofsnull;
+    } else {
+        // 使用函数内静态变量确保 ofsnull 在使用前被初始化
+        static ofstream null_stream;
+        return null_stream;
+    }
 }
 
 ///设置m_bIsEnable的值的函数

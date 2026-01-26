@@ -45,6 +45,10 @@ SpaceChannelState::SpaceChannelState(BasicChannelState* _pBCS) {
 
     m_dStrongestCouplingLoss_Linear = 0;
 
+    // 初始化最佳面板指针为nullptr
+    m_pBest_BS_Panel = nullptr;
+    m_pBest_UE_Panel = nullptr;
+
     //正常设置
     m_H_updated_period_ms = Parameters::Instance().LINK_CTRL.Islot4Hupdate*Parameters::Instance().BASIC.DSlotDuration_ms; //
 
@@ -624,18 +628,56 @@ int SpaceChannelState::GetStrongestBSBeamIndex(
         AntennaPanel* _pBS_Panel,
         AntennaPanel* _pUE_Panel) {
 
-    return m_PanelPairID_2_StrongestBSBeamIndex(
-            _pBS_Panel->GetPanelIndex(),
-            _pUE_Panel->GetPanelIndex());
+    // 检查空指针
+    if (!_pBS_Panel || !_pUE_Panel) {
+        return -1; // 返回无效的beam索引
+    }
+
+    // 检查矩阵是否已初始化
+    if (m_PanelPairID_2_StrongestBSBeamIndex.rows() == 0 || 
+        m_PanelPairID_2_StrongestBSBeamIndex.cols() == 0) {
+        return -1;
+    }
+
+    int bsPanelIdx = _pBS_Panel->GetPanelIndex();
+    int uePanelIdx = _pUE_Panel->GetPanelIndex();
+
+    // 检查索引边界
+    if (bsPanelIdx < 0 || uePanelIdx < 0 ||
+        bsPanelIdx >= m_PanelPairID_2_StrongestBSBeamIndex.rows() ||
+        uePanelIdx >= m_PanelPairID_2_StrongestBSBeamIndex.cols()) {
+        return -1;
+    }
+
+    return m_PanelPairID_2_StrongestBSBeamIndex(bsPanelIdx, uePanelIdx);
 }
 
 int SpaceChannelState::GetStrongestUEBeamIndex(
         AntennaPanel* _pBS_Panel,
         AntennaPanel* _pUE_Panel) {
 
-    return m_PanelPairID_2_StrongestUEBeamIndex(
-            _pBS_Panel->GetPanelIndex(),
-            _pUE_Panel->GetPanelIndex());
+    // 检查空指针
+    if (!_pBS_Panel || !_pUE_Panel) {
+        return -1; // 返回无效的beam索引
+    }
+
+    // 检查矩阵是否已初始化
+    if (m_PanelPairID_2_StrongestUEBeamIndex.rows() == 0 || 
+        m_PanelPairID_2_StrongestUEBeamIndex.cols() == 0) {
+        return -1;
+    }
+
+    int bsPanelIdx = _pBS_Panel->GetPanelIndex();
+    int uePanelIdx = _pUE_Panel->GetPanelIndex();
+
+    // 检查索引边界
+    if (bsPanelIdx < 0 || uePanelIdx < 0 ||
+        bsPanelIdx >= m_PanelPairID_2_StrongestUEBeamIndex.rows() ||
+        uePanelIdx >= m_PanelPairID_2_StrongestUEBeamIndex.cols()) {
+        return -1;
+    }
+
+    return m_PanelPairID_2_StrongestUEBeamIndex(bsPanelIdx, uePanelIdx);
 }
 
 //20180615
@@ -1018,6 +1060,16 @@ void SpaceChannelState::StrongBeam(map<pair<int, int>, double> &mBeam2Couplinglo
 }
 
 void SpaceChannelState::CalcFreqH(double _dTimeSec) {
+    // 检查指针有效性
+    if (!m_pBCS || !m_pBCS->m_pTx || !m_pBCS->m_pRx) {
+        return; // 如果指针无效，直接返回
+    }
+
+    // 检查路径数量有效性
+    if (m_pBCS->m_iNumOfPath <= 0 || m_pBCS->m_iNumOfPath > static_cast<int>(m_vPath.size())) {
+        return; // 如果路径数量无效，直接返回
+    }
+
     vector<std::complex<double>> f(P::s().FX.ICarrierNum);
     vector<double> t(m_pBCS->m_iNumOfPath);
     vector<std::complex<double>> h(m_pBCS->m_iNumOfPath);
@@ -1032,26 +1084,58 @@ void SpaceChannelState::CalcFreqH(double _dTimeSec) {
     std::shared_ptr<cm::Antenna> pUEAntenna
             = m_pBCS->m_pRx->GetAntennaPointer();
 
+    // 检查天线指针有效性
+    if (!pBSAntenna || !pUEAntenna) {
+        return; // 如果天线指针无效，直接返回
+    }
+
+    // 确保矩阵已初始化
+    if (m_PanelPairID_2_StrongestBSBeamIndex.rows() == 0 || m_PanelPairID_2_StrongestBSBeamIndex.cols() == 0) {
+        // 如果矩阵未初始化，重新计算RSRP
+        if(m_pBCS->m_iLinkCategory==0)
+            CalculateRSRP_new();
+        else if(m_pBCS->m_iLinkCategory==1||m_pBCS->m_iLinkCategory==2)
+            CalculateRSRP_RIS();
+    }
+
     BOOST_FOREACH(std::shared_ptr<AntennaPanel>& pBSAntennaPanel,
             pBSAntenna->GetvAntennaPanels()) {
+
+        if (!pBSAntennaPanel) continue; // 跳过空指针
 
         BOOST_FOREACH(std::shared_ptr<AntennaPanel>& pUEAntennaPanel,
                 pUEAntenna->GetvAntennaPanels()) {
 
-            int BS_BeamIndex = m_PanelPairID_2_StrongestBSBeamIndex(pBSAntennaPanel->GetPanelIndex(),pUEAntennaPanel->GetPanelIndex());
-            int UE_BeamIndex = m_PanelPairID_2_StrongestUEBeamIndex(pBSAntennaPanel->GetPanelIndex(),pUEAntennaPanel->GetPanelIndex());
+            if (!pUEAntennaPanel) continue; // 跳过空指针
+
+            int bsPanelIdx = pBSAntennaPanel->GetPanelIndex();
+            int uePanelIdx = pUEAntennaPanel->GetPanelIndex();
+            
+            // 检查索引边界
+            if (bsPanelIdx >= m_PanelPairID_2_StrongestBSBeamIndex.rows() || 
+                uePanelIdx >= m_PanelPairID_2_StrongestBSBeamIndex.cols() ||
+                bsPanelIdx < 0 || uePanelIdx < 0) {
+                continue; // 跳过无效的panel索引
+            }
+            
+            int BS_BeamIndex = m_PanelPairID_2_StrongestBSBeamIndex(bsPanelIdx, uePanelIdx);
+            int UE_BeamIndex = m_PanelPairID_2_StrongestUEBeamIndex(bsPanelIdx, uePanelIdx);
 
             BOOST_FOREACH(std::shared_ptr<CTXRU>& pBS_TXRU,
                     pBSAntennaPanel->GetvTXRUs()) {
 
+                if (!pBS_TXRU) continue; // 跳过空指针
+
                 BOOST_FOREACH(std::shared_ptr<CTXRU>& pUE_TXRU,
                         pUEAntennaPanel->GetvTXRUs()) {
+
+                    if (!pUE_TXRU) continue; // 跳过空指针
 
                     for (int i = 0; i < 1; ++i) {
                         for (int j = 0; j < 1; ++j) {
                             //chty 1115 b
 //                            for (int n = 0; n < m_pBCS->m_iNumOfPath; ++n) {
-                            for (int n = 0; n < iPathNum; ++n) {
+                            for (int n = 0; n < iPathNum && n < static_cast<int>(m_vPath.size()); ++n) {
                             //chty 1115 e
                                 std::complex<double> ChannelMat_Element =
                                         m_vPath[n].CalcPath_TimeH_for_TXRUPair(
