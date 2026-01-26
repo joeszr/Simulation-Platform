@@ -25,7 +25,8 @@ size_t cm::POSHash(const POS& pos){
 size_t cm::KEYHash(const KEY& key){
     return POSHash(key.first) ^ POSHash(key.second);
 }
-cm::LinkMatrix& lm = cm::LinkMatrix::Instance();
+// 移除全局变量 lm，避免静态初始化顺序问题
+// 改为在需要时调用 LinkMatrix::Instance()
 std::shared_ptr<GaussianMap> BasicChannelState::m_pDSMapLOS;
 std::shared_ptr<GaussianMap> BasicChannelState::m_pAODMapLOS;
 std::shared_ptr<GaussianMap> BasicChannelState::m_pAOAMapLOS;
