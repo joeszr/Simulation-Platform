@@ -176,25 +176,28 @@ ofstream& Observer::Print(const string& _str) {
     //    } else
     //        return ofsnull;
 
-    if (m_bIsEnable) {
-        if (m_mOfstr.find(_str) == m_mOfstr.end()) {
-            boost::filesystem::path filename;
-            filename = Directory::Instance().GetPath(_str + ".txt"); //.directory_string();   
-            std::shared_ptr < boost::filesystem::ofstream> p = std::make_shared< boost::filesystem::ofstream > (filename);
-            
-            if(p) {
-                m_mOfstr[_str] = p;            
-            } else {
-                assert(false);
-            }
-            return *p;            
+    // 在静态初始化阶段，如果Observer未启用，直接返回静态成员ofsnull，避免访问Directory
+    // 这样可以避免静态初始化顺序问题
+    if (!m_bIsEnable) {
+        // 使用类的静态成员ofsnull，它在类外已经初始化
+        return ofsnull;
+    }
+    
+    // 只有在Observer启用时才尝试创建文件流
+    // 此时应该已经过了静态初始化阶段
+    if (m_mOfstr.find(_str) == m_mOfstr.end()) {
+        boost::filesystem::path filename;
+        filename = Directory::Instance().GetPath(_str + ".txt"); //.directory_string();   
+        std::shared_ptr < boost::filesystem::ofstream> p = std::make_shared< boost::filesystem::ofstream > (filename);
+        
+        if(p) {
+            m_mOfstr[_str] = p;            
         } else {
-            return *m_mOfstr[_str];
+            assert(false);
         }
+        return *p;            
     } else {
-        // 使用函数内静态变量确保 ofsnull 在使用前被初始化
-        static ofstream null_stream;
-        return null_stream;
+        return *m_mOfstr[_str];
     }
 }
 
