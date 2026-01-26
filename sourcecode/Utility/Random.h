@@ -11,11 +11,14 @@ class Random {
 private:
     static unsigned pseudo_seed; ///伪随机种子
     static bool _on;
+    static bool _on_initialized; ///标记_on是否已初始化
+    /// 懒加载方式获取_on的值，避免静态初始化顺序问题
+    static bool GetOn();
 public:
     Random(){
         pseudo_seed = SeedBegin++;
-//        _on = !Parameters::Instance().BASIC.IsPseudoRandom;
-        _on = (Parameters::Instance().BASIC.ISeed != 0);
+        // 延迟_on的初始化，避免在静态初始化阶段访问Parameters::Instance()
+        // _on将在第一次使用时通过GetOn()函数初始化
     }
 public :
     double xUniform(double _dmin = 0, double _dmax = 1);

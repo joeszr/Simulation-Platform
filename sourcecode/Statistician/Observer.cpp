@@ -56,11 +56,14 @@ ofstream& Observer::Print(const MSID& _MSID) {
             return *m_mOfms[_MSID.ToInt()];
         } else {
             assert(false);
-            return ofsnull;
+            static ofstream null_stream;
+            return null_stream;
         }
 
-    } else
-        return ofsnull;
+    } else {
+        static ofstream null_stream;
+        return null_stream;
+    }
 }
 
 ///@brief 建立每个BS（用BS的ID标识）到输出流的对应函数
@@ -97,11 +100,14 @@ ofstream& Observer::Print(const BSID& _BSID) {
             return *m_mOfbts[_BSID.ToInt()];
         } else {
             assert(false);
-            return ofsnull;
+            static ofstream null_stream;
+            return null_stream;
         }
 
-    } else
-        return ofsnull;
+    } else {
+        static ofstream null_stream;
+        return null_stream;
+    }
 
 }
 
@@ -145,10 +151,13 @@ ofstream& Observer::Print(const BTSID& _BTSID) {
             return *m_mOfbts[_BTSID.ToInt()];
         } else {
             assert(false);
-            return ofsnull;
+            static ofstream null_stream;
+            return null_stream;
         }
-    } else
-        return ofsnull;
+    } else {
+        static ofstream null_stream;
+        return null_stream;
+    }
 
 }
 
@@ -167,23 +176,29 @@ ofstream& Observer::Print(const string& _str) {
     //    } else
     //        return ofsnull;
 
-    if (m_bIsEnable) {
-        if (m_mOfstr.find(_str) == m_mOfstr.end()) {
-            boost::filesystem::path filename;
-            filename = Directory::Instance().GetPath(_str + ".txt"); //.directory_string();   
-            std::shared_ptr < boost::filesystem::ofstream> p = std::make_shared< boost::filesystem::ofstream > (filename);
-            
-            if(p) {
-                m_mOfstr[_str] = p;            
-            } else {
-                assert(false);
-            }
-            return *p;            
-        } else {
-            return *m_mOfstr[_str];
-        }
-    } else
+    // 在静态初始化阶段，如果Observer未启用，直接返回静态成员ofsnull，避免访问Directory
+    // 这样可以避免静态初始化顺序问题
+    if (!m_bIsEnable) {
+        // 使用类的静态成员ofsnull，它在类外已经初始化
         return ofsnull;
+    }
+    
+    // 只有在Observer启用时才尝试创建文件流
+    // 此时应该已经过了静态初始化阶段
+    if (m_mOfstr.find(_str) == m_mOfstr.end()) {
+        boost::filesystem::path filename;
+        filename = Directory::Instance().GetPath(_str + ".txt"); //.directory_string();   
+        std::shared_ptr < boost::filesystem::ofstream> p = std::make_shared< boost::filesystem::ofstream > (filename);
+        
+        if(p) {
+            m_mOfstr[_str] = p;            
+        } else {
+            assert(false);
+        }
+        return *p;            
+    } else {
+        return *m_mOfstr[_str];
+    }
 }
 
 ///设置m_bIsEnable的值的函数
