@@ -107,6 +107,40 @@ void RISMatrix::UpdateThread_RIS(std::vector<MS*>& vpMs) {
     }
 }
 
+// 上行RIS多线程更新函数
+void RISMatrix::UpdateThread_RIS_UL(std::vector<MS*>& vpMs) {
+    int iTimeSec = Clock::Instance().GetTimeSec();
+    for (std::vector<MS*>::iterator it = vpMs.begin(); it != vpMs.end(); ++it) {
+        int rxid = (*it)->GetRxID();
+        for (BTSID btsid = BTSID::Begin(); btsid <= BTSID::End(); ++btsid) {
+            BTS &bts = btsid.GetBTS();
+            Tx &tx = Tx::GetTx(btsid.GetTotalIndex());
+            int txid = bts.GetTxID();
+            TxRxID txrxid = std::make_pair(txid, rxid);
+
+            if (Parameters::Instance().RIS.IS_SmallScale && lm.m_TxRx2CS[txrxid].m_bIsStrong) {
+                AntennaPanel* pBest_BS_Panel =
+                    lm.m_TxRx2CS[txrxid].m_pSCS->m_pBest_BS_Panel;
+                AntennaPanel* pBest_UE_Panel =
+                    lm.m_TxRx2CS[txrxid].m_pSCS->m_pBest_UE_Panel;
+                int UE_BeamIndex = lm.m_TxRx2CS[txrxid].m_pSCS->GetStrongestUEBeamIndex(pBest_BS_Panel, pBest_UE_Panel);
+                
+                for (int i = 0; i < bts.GetRISNum(); ++i) {
+                    RIS &ris = bts.GetRIS(i);
+                    RISID id = ris.GetRISID();
+                    int risid = id.GetTotalIndex();
+
+                    RISRxID risrxid = std::make_pair(ris.GetRISID().GetTotalIndex(), rxid);
+                    // 上行：MS→RIS，使用RIS→MS的转置（信道互易性）
+                    pair<int, int> beampair2 = std::make_pair(UE_BeamIndex, 0);
+                    lm.m_RISRx2CS[risrxid].m_pSCS->UpdateH(iTimeSec, beampair2);
+                    RISMatrix::Instance().CalH_Total_UL(UE_BeamIndex, bts, ris, **it);
+                }
+            }
+        }
+    }
+}
+
 //
 void RISMatrix::Initialize(){
     //初始化Tx-RIS
@@ -199,22 +233,13 @@ void RISMatrix::Initialize(MS& ms){
 
 void RISMatrix::WorkSlot(){
     int iTime = Clock::Instance().GetTimeSlot();
+    // 下行时隙处理
     if (Parameters::Instance().BASIC.BDL == true && DownOrUpLink(iTime) == 0){
         if(Parameters::Instance().BASIC.BRISMultiThread){
             int nThreads = thread::hardware_concurrency();
             int nTxRIS =Parameters::Instance().BASIC.IRISPerBTS*Parameters::Instance().BASIC.ITotalBTSNumPerBS * Parameters::Instance().BASIC.INumBSs;
             int ThreadNum = min(nTxRIS, nThreads);
             vector<vector<MS*> > vpRx(ThreadNum);
-            //for(MSID msid = MSID::Begin(); msid <= MSID::End(); ++msid){
-            //    MS& ms = msid.GetMS();
-            //    MS* pms=&ms;
-            //    vpRx[msid.ToInt()%ThreadNum].push_back(pms);
-            //}
-
-            //boost::thread_group initial;
-            //for (int j = 0; j < static_cast<int> (vpRx.size()); ++j){
-            //    initial.create_thread(bind(&RISMatrix::UpdateThread_RIS, this, vpRx[j]));
-            //}
             std::map<BTSID, int> btsToThread;
             int threadIndex = 0;
             // 遍历所有MS，按服务基站分组
@@ -236,11 +261,46 @@ void RISMatrix::WorkSlot(){
             }
             initial.join_all();
         }
-        else
-
-        for(MSID msid = MSID::Begin(); msid <= MSID::End(); ++msid){
-            MS& ms = msid.GetMS();
-            WorkSlot(ms);
+        else {
+            for(MSID msid = MSID::Begin(); msid <= MSID::End(); ++msid){
+                MS& ms = msid.GetMS();
+                WorkSlot(ms);
+            }
+        }
+    }
+    // 上行时隙处理
+    else if (DownOrUpLink(iTime) == 1){
+        if(Parameters::Instance().BASIC.BRISMultiThread){
+            int nThreads = thread::hardware_concurrency();
+            int nTxRIS =Parameters::Instance().BASIC.IRISPerBTS*Parameters::Instance().BASIC.ITotalBTSNumPerBS * Parameters::Instance().BASIC.INumBSs;
+            int ThreadNum = min(nTxRIS, nThreads);
+            vector<vector<MS*> > vpRx(ThreadNum);
+            std::map<BTSID, int> btsToThread;
+            int threadIndex = 0;
+            // 遍历所有MS，按服务基站分组
+            for(MSID msid = MSID::Begin(); msid <= MSID::End(); ++msid) {
+                MS& ms = msid.GetMS();
+                BTSID servingBTS = ms.GetAllServBTSs()[0];
+                if(btsToThread.find(servingBTS) == btsToThread.end()) {
+                    btsToThread[servingBTS] = threadIndex % ThreadNum;
+                    threadIndex++;
+                }
+                vpRx[btsToThread[servingBTS]].push_back(&ms);
+            }
+            // 创建并启动线程组
+            boost::thread_group initial;
+            for (int j = 0; j < static_cast<int> (vpRx.size()); ++j) {
+                if(!vpRx[j].empty()) {
+                    initial.create_thread(bind(&RISMatrix::UpdateThread_RIS_UL, this, vpRx[j]));
+                }
+            }
+            initial.join_all();
+        }
+        else {
+            for(MSID msid = MSID::Begin(); msid <= MSID::End(); ++msid){
+                MS& ms = msid.GetMS();
+                WorkSlot_UL(ms);
+            }
         }
     }
 }
@@ -275,6 +335,39 @@ void RISMatrix::WorkSlot(MS& ms){
                 pair<int, int> beampair2 = std::make_pair(0, UE_BeamIndex);
                 lm.m_RISRx2CS[risrxid].m_pSCS->UpdateH(iTimeSec,beampair2);
                 RISMatrix::Instance().CalH_Total(BS_BeamIndex,bts, ris, ms);
+            }
+        }
+    }
+}
+
+// 上行RIS工作函数
+void RISMatrix::WorkSlot_UL(MS& ms){
+    int iTimeSec = Clock::Instance().GetTimeSec();
+    int rxid = ms.GetRxID();
+    for (BTSID btsid = BTSID::Begin(); btsid <= BTSID::End(); ++btsid) {
+        BTS &bts = btsid.GetBTS();
+        Tx &tx = Tx::GetTx(btsid.GetTotalIndex());
+        int txid = bts.GetTxID();
+        TxRxID txrxid = std::make_pair(txid, rxid);
+
+        if (Parameters::Instance().RIS.IS_SmallScale && lm.m_TxRx2CS[txrxid].m_bIsStrong) {
+            AntennaPanel* pBest_BS_Panel =
+                lm.m_TxRx2CS[txrxid].m_pSCS->m_pBest_BS_Panel;
+            AntennaPanel* pBest_UE_Panel =
+                lm.m_TxRx2CS[txrxid].m_pSCS->m_pBest_UE_Panel;
+            int UE_BeamIndex = lm.m_TxRx2CS[txrxid].m_pSCS->GetStrongestUEBeamIndex(pBest_BS_Panel, pBest_UE_Panel);
+            
+            for (int i = 0; i < bts.GetRISNum(); ++i) {
+                RIS &ris = bts.GetRIS(i);
+                RISID id = ris.GetRISID();
+                int risid = id.GetTotalIndex();
+
+                RISRxID risrxid = std::make_pair(ris.GetRISID().GetTotalIndex(), rxid);
+                // 上行：MS→RIS，使用RIS→MS的转置（信道互易性）
+                // beampair: (UE_BeamIndex, 0) 表示MS使用UE_BeamIndex，RIS使用0（全向）
+                pair<int, int> beampair2 = std::make_pair(UE_BeamIndex, 0);
+                lm.m_RISRx2CS[risrxid].m_pSCS->UpdateH(iTimeSec, beampair2);
+                RISMatrix::Instance().CalH_Total_UL(UE_BeamIndex, bts, ris, ms);
             }
         }
     }
@@ -465,6 +558,187 @@ void RISMatrix::CalH_Total(int BS_BeamIndex, BTS& _bts, RIS& _RIS, MS& ms){
         }
     }
 
+}
+
+// 上行级联信道计算：MS → RIS → BS
+void RISMatrix::CalH_Total_UL(BTS& _bts, RIS& _RIS, MS& ms){
+    RIS& ServeRIS = _RIS;
+    BTS& ServeBTS = _bts;
+    Tx& tx = *_bts.m_pTxNode;
+    Rx& rx = *ms.m_pRxNode;
+    TxRxID txrxid = std::make_pair(ServeBTS.GetTxID(), ms.GetRxID());
+    TxRISID txrisid = std::make_pair(ServeBTS.GetTxID(), ServeRIS.GetRISID().GetTotalIndex());
+    RISRxID risrxid = std::make_pair(ServeRIS.GetRISID().GetTotalIndex(), ms.GetRxID());
+    std::shared_ptr<cm::Antenna> pBTSAntenna = tx.GetAntennaPointer();
+    std::shared_ptr<cm::Antenna> pRISAntenna = ServeRIS.GetAntennaPointer();
+    std::shared_ptr<cm::Antenna> pMSAntenna = rx.GetAntennaPointer();
+    int BTS_TXRU_NUM = pBTSAntenna->GetTotalTXRU_Num();
+    int RIS_TXRU_NUM = pRISAntenna->GetTotalTXRU_Num();
+    int MS_TXRU_NUM = pMSAntenna->GetTotalTXRU_Num();
+    int iFreSampleNum = P::s().FX.ICarrierNum / P::s().FX.ICarrierSampleSpace;
+    std::vector<itpp::cmat> temp1_t(iFreSampleNum);  // RIS→BS (使用BS→RIS的转置)
+    std::vector<itpp::cmat> temp2_t(iFreSampleNum);  // MS→RIS (使用RIS→MS的转置)
+    std::vector<itpp::cmat> temp4_t(iFreSampleNum);  // 级联结果：MS→RIS→BS
+    
+    for(int i = 0; i < iFreSampleNum; ++i) {
+        // temp1_t: RIS→BS，使用BS→RIS的转置（信道互易性）
+        temp1_t[i] = itpp::zeros_c(BTS_TXRU_NUM, RIS_TXRU_NUM);
+        BOOST_FOREACH(std::shared_ptr<AntennaPanel> pBSAntennaPanel,
+                pBTSAntenna->GetvAntennaPanels()) {
+            BOOST_FOREACH(std::shared_ptr<AntennaPanel> pRISAntennaPanel,
+                    pRISAntenna->GetvAntennaPanels()) {
+                BOOST_FOREACH(std::shared_ptr<CTXRU> pBS_TXRU,
+                        pBSAntennaPanel->GetvTXRUs()) {
+                    BOOST_FOREACH(std::shared_ptr<CTXRU> pRIS_TXRU,
+                            pRISAntennaPanel->GetvTXRUs()) {
+                        pair<int, int> txrupair = std::make_pair(pBS_TXRU->GetTXRUIndex(), pRIS_TXRU->GetTXRUIndex());
+                        // 上行：RIS→BS = (BS→RIS)^T
+                        temp1_t[i](pBS_TXRU->GetTXRUIndex(), pRIS_TXRU->GetTXRUIndex()) = 
+                            std::conj(lm.m_TxRIS2CS[txrisid].m_pSCS->m_TXRUPairID_2_FreqH[txrupair][i]);
+                    }
+                }
+            }
+        }
+        
+        // temp2_t: MS→RIS，使用RIS→MS的转置（信道互易性）
+        temp2_t[i] = itpp::zeros_c(RIS_TXRU_NUM, MS_TXRU_NUM);
+        BOOST_FOREACH(std::shared_ptr<AntennaPanel> pRISAntennaPanel,
+                pRISAntenna->GetvAntennaPanels()) {
+            BOOST_FOREACH(std::shared_ptr<AntennaPanel> pMSAntennaPanel,
+                    pMSAntenna->GetvAntennaPanels()) {
+                BOOST_FOREACH(std::shared_ptr<CTXRU> pRIS_TXRU,
+                        pRISAntennaPanel->GetvTXRUs()) {
+                    BOOST_FOREACH(std::shared_ptr<CTXRU> pMS_TXRU,
+                            pMSAntennaPanel->GetvTXRUs()) {
+                        pair<int, int> txrupair = std::make_pair(pRIS_TXRU->GetTXRUIndex(), pMS_TXRU->GetTXRUIndex());
+                        // 上行：MS→RIS = (RIS→MS)^T
+                        temp2_t[i](pRIS_TXRU->GetTXRUIndex(), pMS_TXRU->GetTXRUIndex()) = 
+                            std::conj(lm.m_RISRx2CS[risrxid].m_pSCS->m_TXRUPairID_2_FreqH[txrupair][i]);
+                    }
+                }
+            }
+        }
+        
+        // 级联：H_total_UL = H_RIS2BS * RIS_phase * H_MS2RIS
+        temp4_t[i] = itpp::zeros_c(BTS_TXRU_NUM, MS_TXRU_NUM);
+        itpp::cmat RISphase = itpp::zeros_c(RIS_TXRU_NUM, RIS_TXRU_NUM);
+        for(int j = 0; j < RIS_TXRU_NUM; ++j) {
+            RISphase(j, j) = lm.m_TxRx2CS[txrxid].m_pSCS->tempRIS(j);
+        }
+        // 上行级联：H_total_UL = H_RIS2BS * RIS_phase * H_MS2RIS
+        temp4_t[i] = temp1_t[i] * RISphase * temp2_t[i];
+    }
+    
+    // 存储级联信道结果到 m_TXRUPairID_2_FreqH_RIS（上行使用相同的存储结构）
+    BOOST_FOREACH(std::shared_ptr<AntennaPanel> pBSAntennaPanel,
+            pBTSAntenna->GetvAntennaPanels()) {
+        BOOST_FOREACH(std::shared_ptr<AntennaPanel> pMSAntennaPanel,
+                pMSAntenna->GetvAntennaPanels()) {
+            BOOST_FOREACH(std::shared_ptr<CTXRU> pBS_TXRU,
+                    pBSAntennaPanel->GetvTXRUs()) {
+                BOOST_FOREACH(std::shared_ptr<CTXRU> pMS_TXRU,
+                        pMSAntennaPanel->GetvTXRUs()) {
+                    pair<int, int> txrupair = std::make_pair(pMS_TXRU->GetTXRUIndex(), pBS_TXRU->GetTXRUIndex());
+                    // 注意：上行时，txrupair的顺序是(MS_TXRU, BS_TXRU)，与下行相反
+                    lm.m_TxRx2CS[txrxid].m_pSCS->m_TXRUPairID_2_FreqH_RIS[txrupair].resize(iFreSampleNum);
+                    for (int k = 0; k < iFreSampleNum; ++k) {
+                        lm.m_TxRx2CS[txrxid].m_pSCS->m_TXRUPairID_2_FreqH_RIS[txrupair][k] = 
+                            temp4_t[k](pBS_TXRU->GetTXRUIndex(), pMS_TXRU->GetTXRUIndex());
+                    }
+                }
+            }
+        }
+    }
+}
+
+// 上行级联信道计算（带UE_BeamIndex参数）
+void RISMatrix::CalH_Total_UL(int UE_BeamIndex, BTS& _bts, RIS& _RIS, MS& ms){
+    RIS& ServeRIS = _RIS;
+    BTS& ServeBTS = _bts;
+    Tx& tx = *_bts.m_pTxNode;
+    Rx& rx = *ms.m_pRxNode;
+    TxRxID txrxid = std::make_pair(ServeBTS.GetTxID(), ms.GetRxID());
+    TxRISID txrisid = std::make_pair(ServeBTS.GetTxID(), ServeRIS.GetRISID().GetTotalIndex());
+    RISRxID risrxid = std::make_pair(ServeRIS.GetRISID().GetTotalIndex(), ms.GetRxID());
+    std::shared_ptr<cm::Antenna> pBTSAntenna = tx.GetAntennaPointer();
+    std::shared_ptr<cm::Antenna> pRISAntenna = ServeRIS.GetAntennaPointer();
+    std::shared_ptr<cm::Antenna> pMSAntenna = rx.GetAntennaPointer();
+    int BTS_TXRU_NUM = pBTSAntenna->GetTotalTXRU_Num();
+    int RIS_TXRU_NUM = pRISAntenna->GetTotalTXRU_Num();
+    int MS_TXRU_NUM = pMSAntenna->GetTotalTXRU_Num();
+    int iFreSampleNum = P::s().FX.ICarrierNum / P::s().FX.ICarrierSampleSpace;
+    std::vector<itpp::cmat> temp1_t(iFreSampleNum);  // RIS→BS
+    std::vector<itpp::cmat> temp2_t(iFreSampleNum);  // MS→RIS
+    std::vector<itpp::cmat> temp4_t(iFreSampleNum);  // 级联结果
+    
+    for(int i = 0; i < iFreSampleNum; ++i) {
+        // temp1_t: RIS→BS，使用BS→RIS的转置
+        temp1_t[i] = itpp::zeros_c(BTS_TXRU_NUM, RIS_TXRU_NUM);
+        BOOST_FOREACH(std::shared_ptr<AntennaPanel> pBSAntennaPanel,
+                pBTSAntenna->GetvAntennaPanels()) {
+            BOOST_FOREACH(std::shared_ptr<AntennaPanel> pRISAntennaPanel,
+                    pRISAntenna->GetvAntennaPanels()) {
+                BOOST_FOREACH(std::shared_ptr<CTXRU> pBS_TXRU,
+                        pBSAntennaPanel->GetvTXRUs()) {
+                    BOOST_FOREACH(std::shared_ptr<CTXRU> pRIS_TXRU,
+                            pRISAntennaPanel->GetvTXRUs()) {
+                        pair<int, int> txrupair = std::make_pair(pBS_TXRU->GetTXRUIndex(), pRIS_TXRU->GetTXRUIndex());
+                        // 上行：RIS→BS = (BS→RIS)^T
+                        temp1_t[i](pBS_TXRU->GetTXRUIndex(), pRIS_TXRU->GetTXRUIndex()) = 
+                            std::conj(lm.m_TxRIS2CS[txrisid].m_pSCS->m_TXRUPairID_2_FreqH[txrupair][i]);
+                    }
+                }
+            }
+        }
+        
+        // temp2_t: MS→RIS，使用RIS→MS的转置（带UE_BeamIndex）
+        temp2_t[i] = itpp::zeros_c(RIS_TXRU_NUM, MS_TXRU_NUM);
+        BOOST_FOREACH(std::shared_ptr<AntennaPanel> pRISAntennaPanel,
+                pRISAntenna->GetvAntennaPanels()) {
+            BOOST_FOREACH(std::shared_ptr<AntennaPanel> pMSAntennaPanel,
+                    pMSAntenna->GetvAntennaPanels()) {
+                BOOST_FOREACH(std::shared_ptr<CTXRU> pRIS_TXRU,
+                        pRISAntennaPanel->GetvTXRUs()) {
+                    BOOST_FOREACH(std::shared_ptr<CTXRU> pMS_TXRU,
+                            pMSAntennaPanel->GetvTXRUs()) {
+                        pair<int, int> txrupair = std::make_pair(pRIS_TXRU->GetTXRUIndex(), pMS_TXRU->GetTXRUIndex());
+                        // 上行：MS→RIS = (RIS→MS)^T，使用UE_BeamIndex对应的信道
+                        // 注意：这里可能需要根据UE_BeamIndex选择对应的信道，暂时使用标准转置
+                        temp2_t[i](pRIS_TXRU->GetTXRUIndex(), pMS_TXRU->GetTXRUIndex()) = 
+                            std::conj(lm.m_RISRx2CS[risrxid].m_pSCS->m_TXRUPairID_2_FreqH[txrupair][i]);
+                    }
+                }
+            }
+        }
+        
+        // 级联：H_total_UL = H_RIS2BS * RIS_phase * H_MS2RIS
+        temp4_t[i] = itpp::zeros_c(BTS_TXRU_NUM, MS_TXRU_NUM);
+        itpp::cmat RISphase = itpp::zeros_c(RIS_TXRU_NUM, RIS_TXRU_NUM);
+        for(int j = 0; j < RIS_TXRU_NUM; ++j) {
+            RISphase(j, j) = lm.m_TxRx2CS[txrxid].m_pSCS->tempRIS(j);
+        }
+        temp4_t[i] = temp1_t[i] * RISphase * temp2_t[i];
+    }
+    
+    // 存储级联信道结果
+    BOOST_FOREACH(std::shared_ptr<AntennaPanel> pBSAntennaPanel,
+            pBTSAntenna->GetvAntennaPanels()) {
+        BOOST_FOREACH(std::shared_ptr<AntennaPanel> pMSAntennaPanel,
+                pMSAntenna->GetvAntennaPanels()) {
+            BOOST_FOREACH(std::shared_ptr<CTXRU> pBS_TXRU,
+                    pBSAntennaPanel->GetvTXRUs()) {
+                BOOST_FOREACH(std::shared_ptr<CTXRU> pMS_TXRU,
+                        pMSAntennaPanel->GetvTXRUs()) {
+                    pair<int, int> txrupair = std::make_pair(pMS_TXRU->GetTXRUIndex(), pBS_TXRU->GetTXRUIndex());
+                    lm.m_TxRx2CS[txrxid].m_pSCS->m_TXRUPairID_2_FreqH_RIS[txrupair].resize(iFreSampleNum);
+                    for (int k = 0; k < iFreSampleNum; ++k) {
+                        lm.m_TxRx2CS[txrxid].m_pSCS->m_TXRUPairID_2_FreqH_RIS[txrupair][k] = 
+                            temp4_t[k](pBS_TXRU->GetTXRUIndex(), pMS_TXRU->GetTXRUIndex());
+                    }
+                }
+            }
+        }
+    }
 }
 
 

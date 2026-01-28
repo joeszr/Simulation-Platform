@@ -29,11 +29,18 @@ namespace cm {
     public:
         void InitThread_RIS(std::vector<MS*>& vpMs);
         void UpdateThread_RIS(std::vector<MS*>& vpMs);
+        // 上行RIS相关函数
+        void UpdateThread_RIS_UL(std::vector<MS*>& vpMs);
         void CalH_Total(MS& ms);
-        void CalH_Total(BTS& _bts,RIS& _RIS, MS& ms);//建立小尺度级联信道矩阵
+        void CalH_Total(BTS& _bts,RIS& _RIS, MS& ms);//建立小尺度级联信道矩阵（下行）
         void CalH_Total(int BS_BeamIndex, BTS& _bts,RIS& _RIS, MS& ms);
+        // 上行级联信道计算
+        void CalH_Total_UL(BTS& _bts, RIS& _RIS, MS& ms);//建立小尺度级联信道矩阵（上行）
+        void CalH_Total_UL(int UE_BeamIndex, BTS& _bts, RIS& _RIS, MS& ms);
         void WorkSlot();
         void WorkSlot(MS& ms);
+        // 上行RIS工作函数
+        void WorkSlot_UL(MS& ms);
         void ClearRISMatrix(Rx& _rx);
         /// @brief 判断发送者与接收者之间的链路是否存在直射径
         /// @param _tx 发送者引用
