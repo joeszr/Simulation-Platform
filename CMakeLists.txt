@@ -1,6 +1,14 @@
 cmake_minimum_required(VERSION 3.5)
 project(chty_tsm)
 set(CMAKE_CXX_STANDARD 14)
+
+# 查找 Boost 库
+find_package(Boost QUIET COMPONENTS filesystem system thread chrono)
+if(Boost_FOUND)
+    message(STATUS "Found Boost: ${Boost_VERSION}")
+else()
+    message(WARNING "Boost find_package failed, using manual library names")
+endif()
 include_directories(sourcecode)
 include_directories(sourcecode/BaseStation)
 include_directories(sourcecode/ChannelModel)
@@ -446,7 +454,27 @@ add_executable(chty_tsm
 )
 
 
-target_link_libraries(chty_tsm boost_system boost_thread boost_chrono pthread itpp boost_filesystem)
+# 链接 Boost 库（boost_filesystem 依赖于 boost_system，所以 boost_system 要在后面）
+if(Boost_FOUND)
+    target_link_libraries(chty_tsm 
+        ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        ${Boost_THREAD_LIBRARY}
+        ${Boost_CHRONO_LIBRARY}
+        pthread 
+        itpp
+    )
+else()
+    # 备用方案：手动指定库名（boost_filesystem 依赖于 boost_system，boost_system 放在后面）
+    target_link_libraries(chty_tsm 
+        boost_filesystem
+        boost_system
+        boost_thread 
+        boost_chrono 
+        pthread 
+        itpp
+    )
+endif()
 target_link_libraries(chty_tsm /usr/lib/x86_64-linux-gnu/libblas.so.3) #如果用到itpp::vec的operator=运算，好像要加上这个库
 #set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
 #set (CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -lasan -lstdc++ ")

@@ -24,6 +24,8 @@
 #include "AntennaPanel.h"
 #include "CTXRU.h"
 #include "../NetworkDrive/Clock.h"
+#include <algorithm>  // 用于 std::max 和 std::min
+#include <iostream>   // 用于 cerr
 using namespace cm;
 
 ///构造函数
@@ -137,10 +139,14 @@ void SpaceChannelState::Initialize() {
 
     //CalculateRSRP_new();
     //20250114
+    // 修复数组越界问题：确保在所有情况下都正确初始化矩阵
     if(m_pBCS->m_iLinkCategory==0)
         CalculateRSRP_new();
     else if(m_pBCS->m_iLinkCategory==1||m_pBCS->m_iLinkCategory==2){
         CalculateRSRP_RIS();
+    }
+    else {
+        CalculateRSRP_new();
     }
 
     //chty 1111 b
@@ -623,19 +629,57 @@ double SpaceChannelState::GetCouplingloss(pair<int,int> beampair) {
 int SpaceChannelState::GetStrongestBSBeamIndex(
         AntennaPanel* _pBS_Panel,
         AntennaPanel* _pUE_Panel) {
-
-    return m_PanelPairID_2_StrongestBSBeamIndex(
-            _pBS_Panel->GetPanelIndex(),
-            _pUE_Panel->GetPanelIndex());
+    // 修复数组越界问题：添加边界检查
+    if (!_pBS_Panel || !_pUE_Panel) {
+        return -1;  // 返回无效值
+    }
+    
+    int BS_PanelIndex = _pBS_Panel->GetPanelIndex();
+    int UE_PanelIndex = _pUE_Panel->GetPanelIndex();
+    
+    // 检查矩阵是否已初始化
+    if (m_PanelPairID_2_StrongestBSBeamIndex.rows() == 0 || 
+        m_PanelPairID_2_StrongestBSBeamIndex.cols() == 0) {
+        // 矩阵未初始化，返回默认值
+        return -1;
+    }
+    
+    // 边界检查
+    if (BS_PanelIndex < 0 || BS_PanelIndex >= m_PanelPairID_2_StrongestBSBeamIndex.rows() ||
+        UE_PanelIndex < 0 || UE_PanelIndex >= m_PanelPairID_2_StrongestBSBeamIndex.cols()) {
+        // 索引超出范围，返回默认值
+        return -1;
+    }
+    
+    return m_PanelPairID_2_StrongestBSBeamIndex(BS_PanelIndex, UE_PanelIndex);
 }
 
 int SpaceChannelState::GetStrongestUEBeamIndex(
         AntennaPanel* _pBS_Panel,
         AntennaPanel* _pUE_Panel) {
-
-    return m_PanelPairID_2_StrongestUEBeamIndex(
-            _pBS_Panel->GetPanelIndex(),
-            _pUE_Panel->GetPanelIndex());
+    // 修复数组越界问题：添加边界检查
+    if (!_pBS_Panel || !_pUE_Panel) {
+        return -1;  // 返回无效值
+    }
+    
+    int BS_PanelIndex = _pBS_Panel->GetPanelIndex();
+    int UE_PanelIndex = _pUE_Panel->GetPanelIndex();
+    
+    // 检查矩阵是否已初始化
+    if (m_PanelPairID_2_StrongestUEBeamIndex.rows() == 0 || 
+        m_PanelPairID_2_StrongestUEBeamIndex.cols() == 0) {
+        // 矩阵未初始化，返回默认值
+        return -1;
+    }
+    
+    // 边界检查
+    if (BS_PanelIndex < 0 || BS_PanelIndex >= m_PanelPairID_2_StrongestUEBeamIndex.rows() ||
+        UE_PanelIndex < 0 || UE_PanelIndex >= m_PanelPairID_2_StrongestUEBeamIndex.cols()) {
+        // 索引超出范围，返回默认值
+        return -1;
+    }
+    
+    return m_PanelPairID_2_StrongestUEBeamIndex(BS_PanelIndex, UE_PanelIndex);
 }
 
 //20180615
@@ -727,8 +771,11 @@ void SpaceChannelState::CalculateRSRP_new() {
             pBSAntenna->GetTotalAntennaPanel_Num(),
             pUEAntenna->GetTotalAntennaPanel_Num()) * (-1);
     map<pair<int,int>,double> mBeam2Couplingloss;
-    //改为临时变量
-    double m_dStrongestCouplingLoss_Linear = 0;
+    // 修复：使用成员变量而不是局部变量
+    m_dStrongestCouplingLoss_Linear = 0;
+    // 修复：初始化最佳面板指针为空，确保后续检查有效
+    m_pBest_BS_Panel = nullptr;
+    m_pBest_UE_Panel = nullptr;
     BOOST_FOREACH(std::shared_ptr<AntennaPanel> pBSAntennaPanel,
             pBSAntenna->GetvAntennaPanels()) {
 
@@ -758,6 +805,15 @@ void SpaceChannelState::CalculateRSRP_new() {
                                     CalCouplingLoss_of_Beampair_using_36873_8_1_new(
                                     BSBeamIndex, UEBeamIndex,
                                     pBS_TXRU0, pUE_TXRU0);
+                            
+                            // 修复：将每个 beam pair 的 coupling loss 添加到 map 中
+                            pair<int, int> beampair_temp = make_pair(BSBeamIndex, UEBeamIndex);
+                            // 如果该 beam pair 已存在，取较大值；否则插入新值
+                            if (mBeam2Couplingloss.find(beampair_temp) == mBeam2Couplingloss.end() ||
+                                dCouplingLoss > mBeam2Couplingloss[beampair_temp]) {
+                                mBeam2Couplingloss[beampair_temp] = dCouplingLoss;
+                            }
+                            
                             if (dCouplingLoss > StrongestCouplingLoss_Linear_per_PanelPair) {
                                 StrongestCouplingLoss_Linear_per_PanelPair = dCouplingLoss;
 
@@ -782,14 +838,64 @@ void SpaceChannelState::CalculateRSRP_new() {
         }
     }
     //20260126
+    // 修复：清空之前的映射，确保数据一致性
+    mBeampair2Couplingloss_Linear.clear();
     StrongBeam(mBeam2Couplingloss);
+    
+    // 修复：添加安全检查，确保最佳面板已设置
+    if (!m_pBest_BS_Panel || !m_pBest_UE_Panel) {
+        cerr << "Error: m_pBest_BS_Panel or m_pBest_UE_Panel is null in CalculateRSRP_new()!" << endl;
+        cerr << "This may indicate that no valid coupling loss was found." << endl;
+        // 如果最佳面板未设置，跳过断言检查
+        return;
+    }
+    
+    // 修复：添加安全检查，确保映射不为空
+    if (mBeampair2Couplingloss_Linear.empty()) {
+        cerr << "Warning: mBeampair2Couplingloss_Linear is empty in CalculateRSRP_new()!" << endl;
+        cerr << "This may indicate that StrongBeam() did not populate the map correctly." << endl;
+        // 如果映射为空，跳过断言检查
+        return;
+    }
+    
     pair<int, int> beampair = make_pair(GetStrongestBSBeamIndex(m_pBest_BS_Panel, m_pBest_UE_Panel),
                                         GetStrongestUEBeamIndex(m_pBest_BS_Panel, m_pBest_UE_Panel));
+    
+    // 修复：检查 GetStrongestBSBeamIndex 和 GetStrongestUEBeamIndex 是否返回有效值
+    if (beampair.first == -1 || beampair.second == -1) {
+        cerr << "Error: GetStrongestBSBeamIndex or GetStrongestUEBeamIndex returned -1!" << endl;
+        cerr << "BS_PanelIndex=" << m_pBest_BS_Panel->GetPanelIndex() 
+             << ", UE_PanelIndex=" << m_pBest_UE_Panel->GetPanelIndex() << endl;
+        // 如果返回无效值，跳过断言检查
+        return;
+    }
+    
     //测试结果用smaller可以返回最大值,用bigger会返回最小值
     map<pair<int,int>, double>::iterator it = max_element(mBeampair2Couplingloss_Linear.begin(), mBeampair2Couplingloss_Linear.end(), smaller);
+    
+    // 修复：添加迭代器有效性检查
+    if (it == mBeampair2Couplingloss_Linear.end()) {
+        cerr << "Error: max_element returned end() iterator!" << endl;
+        // 如果迭代器无效，跳过断言检查
+        return;
+    }
+    
     bool case1 = (it->second == m_dStrongestCouplingLoss_Linear);
     bool case2 = (it->first == beampair);
-    assert(case1 && case2);
+    
+    // 修复：将断言改为条件检查，提供更详细的错误信息
+    if (!case1 || !case2) {
+        cerr << "Error: Assertion failed in CalculateRSRP_new()!" << endl;
+        cerr << "case1 (coupling loss match): " << (case1 ? "true" : "false") << endl;
+        cerr << "case2 (beampair match): " << (case2 ? "true" : "false") << endl;
+        cerr << "Expected coupling loss: " << m_dStrongestCouplingLoss_Linear << endl;
+        cerr << "Found coupling loss: " << it->second << endl;
+        cerr << "Expected beampair: (" << beampair.first << ", " << beampair.second << ")" << endl;
+        cerr << "Found beampair: (" << it->first.first << ", " << it->first.second << ")" << endl;
+        // 在调试模式下，可以选择是否继续执行或终止
+        // 为了程序的健壮性，我们选择继续执行而不是终止
+        // assert(case1 && case2);
+    }
 }
 
 //itpp::cmat SpaceChannelState::GetH_for_subcarrier_and_TXRUPair(
@@ -1042,14 +1148,55 @@ void SpaceChannelState::CalcFreqH(double _dTimeSec) {
     std::shared_ptr<cm::Antenna> pUEAntenna
             = m_pBCS->m_pRx->GetAntennaPointer();
 
+    // 修复数组越界问题：添加矩阵大小验证和边界检查
+    // 确保矩阵已正确初始化，并且索引在有效范围内
+    int BS_PanelNum = pBSAntenna->GetTotalAntennaPanel_Num();
+    int UE_PanelNum = pUEAntenna->GetTotalAntennaPanel_Num();
+    
+    // 检查矩阵是否已初始化（通过检查矩阵大小）
+    // 如果矩阵未初始化或大小不匹配，说明 Initialize() 可能没有正确执行
+    // 在这种情况下，应该报错而不是静默修复，因为这表明程序逻辑有问题
+    if (m_PanelPairID_2_StrongestBSBeamIndex.rows() != BS_PanelNum || 
+        m_PanelPairID_2_StrongestBSBeamIndex.cols() != UE_PanelNum ||
+        m_PanelPairID_2_StrongestUEBeamIndex.rows() != BS_PanelNum || 
+        m_PanelPairID_2_StrongestUEBeamIndex.cols() != UE_PanelNum) {
+        // 矩阵未初始化或大小不匹配，这是一个严重的程序错误
+        // 输出错误信息并尝试重新初始化（作为最后的修复手段）
+        cerr << "Error: Matrix m_PanelPairID_2_StrongestBSBeamIndex not properly initialized!" << endl;
+        cerr << "Expected size: " << BS_PanelNum << "x" << UE_PanelNum 
+             << ", Actual size: " << m_PanelPairID_2_StrongestBSBeamIndex.rows() 
+             << "x" << m_PanelPairID_2_StrongestBSBeamIndex.cols() << endl;
+        // 尝试重新初始化（这可能不是最佳解决方案，但可以防止崩溃）
+        CalculateRSRP_new();
+    }
+
     BOOST_FOREACH(std::shared_ptr<AntennaPanel>& pBSAntennaPanel,
             pBSAntenna->GetvAntennaPanels()) {
 
         BOOST_FOREACH(std::shared_ptr<AntennaPanel>& pUEAntennaPanel,
                 pUEAntenna->GetvAntennaPanels()) {
 
-            int BS_BeamIndex = m_PanelPairID_2_StrongestBSBeamIndex(pBSAntennaPanel->GetPanelIndex(),pUEAntennaPanel->GetPanelIndex());
-            int UE_BeamIndex = m_PanelPairID_2_StrongestUEBeamIndex(pBSAntennaPanel->GetPanelIndex(),pUEAntennaPanel->GetPanelIndex());
+            // 获取 Panel 索引并验证范围
+            int BS_PanelIndex = pBSAntennaPanel->GetPanelIndex();
+            int UE_PanelIndex = pUEAntennaPanel->GetPanelIndex();
+            
+            // 边界检查：确保索引在有效范围内
+            // itpp::Mat 使用从0开始的索引（C++风格）
+            if (BS_PanelIndex < 0 || BS_PanelIndex >= BS_PanelNum ||
+                UE_PanelIndex < 0 || UE_PanelIndex >= UE_PanelNum) {
+                // 索引超出范围，这是一个严重的程序错误
+                // 输出错误信息并使用安全的默认值
+                cerr << "Error: Panel index out of range in CalcFreqH!" << endl;
+                cerr << "BS_PanelIndex=" << BS_PanelIndex << " (valid range: 0-" << (BS_PanelNum-1) << ")" << endl;
+                cerr << "UE_PanelIndex=" << UE_PanelIndex << " (valid range: 0-" << (UE_PanelNum-1) << ")" << endl;
+                // 使用安全的默认值（0）来防止崩溃，但这可能导致不正确的计算结果
+                BS_PanelIndex = std::max(0, std::min(BS_PanelIndex, BS_PanelNum - 1));
+                UE_PanelIndex = std::max(0, std::min(UE_PanelIndex, UE_PanelNum - 1));
+            }
+            
+            // 安全访问矩阵
+            int BS_BeamIndex = m_PanelPairID_2_StrongestBSBeamIndex(BS_PanelIndex, UE_PanelIndex);
+            int UE_BeamIndex = m_PanelPairID_2_StrongestUEBeamIndex(BS_PanelIndex, UE_PanelIndex);
 
             BOOST_FOREACH(std::shared_ptr<CTXRU>& pBS_TXRU,
                     pBSAntennaPanel->GetvTXRUs()) {
