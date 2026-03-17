@@ -132,6 +132,7 @@ void RISUrbanMacro::ReadMapPos(Point& _tx, Rx& _rx, BasicChannelState* const bcs
             bcs->m_EOASpreadDeg = std::min(52.0, pow(10.0, P::s().Macro2UE_O2I.EOASpreadSTD * y(6, 0) + P::s().Macro2UE_O2I.EOASpreadAVE));
         }
     } else {
+        // 20260311BISRIS（基站到RIS）链路：使用 RIS 信道（Pico2UE 参数即 RIS 信道模型）
         if (bcs->m_bIsLOS) {
             x(0, 0) = m_pDSMapPicoToUELOS ->ReadMap(position);
             x(1, 0) = m_pAODMapPicoToUELOS->ReadMap(position);
@@ -230,6 +231,7 @@ void RISUrbanMacro::SetSCSPara(BasicChannelState* const bcs, double _dTxHeight, 
             bcs->m_dClusterESA = P::s().Macro2UE_O2I.ClusterESA;
         }
     } else {
+        // BISRIS 时使用 RIS 信道小尺度参数（Pico2UE_* 即 RIS 信道）
         if (bcs->m_bIsLOS) {
             bcs->m_iNumOfPath = P::s().Pico2UE_LOS.NumOfCluster;
             bcs->m_delayScaling = P::s().Pico2UE_LOS.DelayScaling;

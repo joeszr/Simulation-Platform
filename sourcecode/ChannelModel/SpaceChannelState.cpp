@@ -1015,14 +1015,14 @@ itpp::cmat SpaceChannelState::GetH_after_ABF_for_all_active_TXRU_Pairs_RISIntf_B
 
         for (int j = 0; j < m_pBest_BS_Panel->GetTXRU_Num(); j++) {
             std::shared_ptr<CTXRU> pBS_TXRU = vBS_TXRUs[j];
-            //            complex<double> H_after_ABF_with_BestBeams =
-            //                GetH_after_ABF_with_BestBeams(_scid, pBS_TXRU, pUE_TXRU);
-            complex<double> H_after_ABF_with_BestBeams_RIS =
+            complex<double> H_direct =
+                GetH_after_ABF_with_BestBeams(_scid, pBS_TXRU, pUE_TXRU);
+            complex<double> H_RIS =
                 GetH_after_ABF_with_BestBeams_RISonly(_scid, pBS_TXRU, pUE_TXRU);
-            H_after_ABF(i, j) = H_after_ABF_with_BestBeams_RIS;
-
+            H_after_ABF(i, j) = H_direct + H_RIS;
         }
     }
+    return H_after_ABF;
 }
 
 std::complex<double> SpaceChannelState::GetH_after_ABF_with_BestBeams(

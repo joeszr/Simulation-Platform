@@ -242,6 +242,7 @@ void LinkMatrix::RISInitialize() {
 }
 
 ///20251117
+///20260311 RIS→MS 小尺度级联：在 Initialize(大尺度) 后补全 SetStrong + InitStrongSCM + CalH，与 Tx→RIS 段一致，使 m_RISRx2CS 具有有效 m_pSCS 和 H。
 void LinkMatrix::RISInitialize_thread1(MS& ms){
 int rxid = ms.GetRxID();
 Rx& rx = *ms.m_pRxNode;
@@ -252,9 +253,13 @@ for(BTSID btsid = BTSID::Begin(); btsid <= BTSID::End(); ++btsid) {
         RISID id = ris.GetRISID();
         int risid = id.GetTotalIndex();
         RISRxID risrxid = std::make_pair(risid, rxid);
-        // 为 RIS→Rx 建立 ChannelState 并 Initialize
+        // 为 RIS→Rx 建立 ChannelState 并 Initialize（大尺度）
         m_RISRx2CS[risrxid] = cm::ChannelState();
         m_RISRx2CS[risrxid].Initialize(ris, rx);
+        // RIS→MS 小尺度级联：标记强链路并初始化空时信道、生成 H
+        m_RISRx2CS[risrxid].SetStrong();
+        m_RISRx2CS[risrxid].InitStrongSCM();
+        m_RISRx2CS[risrxid].CalH();
     }
 }
 // 线程计数（与 RISInitialize() 中的 while 栅栏配合）
@@ -818,7 +823,10 @@ itpp::cmat LinkMatrix::GetFadingMat_wABF_for_active_TXRU_Pairs_per_PanelPair(
 itpp::cmat LinkMatrix::GetFadingMat_wABF_for_all_active_TXRU_Pairs(
         Tx& _tx, Rx& _rx, int _scid) {
     TxRxID txrxid = std::make_pair(_tx.GetTxID(), _rx.GetRxID());
-    //cwq dahuawu
+    ///20260312 引入ris，非直连
+    if (Parameters::Instance().BASIC.BISRIS) {
+        return GetFadingMat_wABF_for_all_active_TXRU_Pairs_RISIntf(_tx, _rx, _scid);
+    }
     return m_TxRx2CS[txrxid].m_pSCS->
             GetH_after_ABF_for_all_active_TXRU_Pairs(
             _scid / P::s().FX.ICarrierSampleSpace);

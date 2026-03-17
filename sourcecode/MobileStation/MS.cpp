@@ -1054,6 +1054,9 @@ void MS::BasicOutput_Statistican() {
     Statistician::Instance().m_MSData_DL[m_ID.ToInt()].m_dLinkLossDB = dServeLinkLossDB;
     Statistician::Instance().m_MSData_DL[m_ID.ToInt()].m_dAveAntGainDB = dServeBroadcastAntGainDB;
     Statistician::Instance().m_MSData_DL[m_ID.ToInt()].DL.m_dGeometryDB = m_dGeometryDB_SNR;
+    // RSRP(dBm) = 主服务基站发射功率(dBm) - 链路损耗(dB)
+    double dBS_TxPowerDbm = Parameters::Instance().Macro.DL.DMaxTxPowerDbm;
+    Statistician::Instance().m_MSData_DL[m_ID.ToInt()].m_dRSRP_dBm = dBS_TxPowerDbm - dServeLinkLossDB;
     std::lock_guard<std::mutex> l(MacroMS_lock);
     //hyl 冗余
 //    if (BSManager::IsMacro(m_MainServBTS)) {

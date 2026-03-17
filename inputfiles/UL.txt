@@ -1,0 +1,118 @@
+//////////////////////////////////////////////////////////////////////////////////////////////
+/////                                UL Parameters                                       /////
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+  Parameters                               Value                 Note
+        
+& BASIC.BUL                                      0          1----Uplink ON
+
+& SIM.UL.ISubframeNum                            1          Number of Uplink Subframe [2]
+& SIM.UL.IHARQProcessNum                         4          The HARQ process Num for Uplink
+& MSS.UL.DAlfa4SRS                             0.8          
+& MSS.UL.DP0Dbm4SRS                            -81          dBm
+
+%%%%
+& SIM.UL.IMSnumOfMUMIMO                          2          Number of MS in Virtual(MU) MIMO
+
+& BTS.UL.IScheduleMode                           0          0----PF[origenal 0] zhangyong
+                                                            11 ---- Vmimo orthogonal
+                                                            22 ---- PF more flexiable, UE will use diff RB Nums
+                                                            23------PF RME
+                                                            1----RR
+                                                            3----VirtualMIMO PF
+                                                            10 ----Vmimo Trial zhangyong
+                                                            11 ---- Vmimo orthogonal
+                                                            22 ---- PF more flexiable, UE will use diff RB Nums
+                                                            23------PF RME
+& BTS.UL.dPFfactor                             0.8          PF factor 0.8 or 1
+& BTS.UL.DNoiseFigureDb                          4          noise figure, dB
+& BTS.UL.IDetectorMode                           3          0----MRC
+                                                            1----IRC
+                                                            2----SimpleMMSE
+                                                            3----MMSE
+                                                            4----MMSE for Precoding Debug
+
+
+& LINK.BIS3DAntUsed                              1          0-----No
+                                                            1-----Yes
+& LINK.BPolarizeNB                               1          0--------Co-polorize
+                                                            1--------Cross-polorize
+& LINK.BPolarizeUE                               0          0--------Co-polorize
+                                                            1--------Cross-polorize
+& LINK.DDownTiltDeg                              6          15 degrees for case1(3GPP)
+                                                            12 degrees (ITU:UMi,UMa)
+                                                            6  degrees (ITU:RMa,SMa)
+& LINK.DHBackLossDB                            -25          dB 2d[-20]3d[-30]
+& LINK.DNoisePowerSpectrumDensityDbmHz        -174          Noise Power spectrum density,dBm/Hz
+& LINK.DPenetrationLossDB                       13          Indoor Penetration Loss, dB 
+& LINK.DRadioFrequencyMHz                     1900          
+& LINK.DVBackLossDB                            -25          dB 2d[-20]3d[-30]
+& LINK.ISEESMorMIESM                             1          0---EESM
+                                                            1---MIESM
+
+
+& MSS.UL.BIsSRSfixed                             0          1----fixed
+                                                            0---- not fixed
+& MSS.UL.DAlfa                                 0.8          
+& MSS.UL.DAlfa4SRS                             0.8          
+& MSS.UL.DMaxTxPowerDbm                         23          dBm
+& MSS.UL.DMinTxPowerDbm                        -50          dBm
+& MSS.UL.DP0dBm                                -80          dBm
+& MSS.UL.DP0dBm4SRS                            -80          dBm
+& MSS.UL.ISRSBandWidthIndex                      1          1---- full bandwidth SRS
+                                                            2---- 1/2 bandwidth SRS
+                                                            4---- 1/4 bandwidth SRS
+& MSS.UL.ISRS_PERIOD                             5          slot
+
+
+& SIM.UL.BIsFrequencyReuseOn                     0          0---- NO frequency reuse;
+                                                            1---- reuse factor = 3;
+& SIM.UL.BIsMMSEOptionOneOn                      0          0----orginal MMSE, have the H of strong interference
+                                                            1----MMSE OPTION ONE is on
+& SIM.UL.BIsMUCoMPOn                             0          1----MU COMP
+                                                            0----SU COMP
+& SIM.UL.BisMUollaOn                             0          0----legacy olla/single for MU;[0]
+& SIM.UL.COMP.BIsMUCoMPOn                        0          1----MU COMP
+                                                            0----SU COMP
+& SIM.UL.COMP.DCompRsrpThresholdDB              10          COMP rsrp threshold for cooperated BTS
+& SIM.UL.COMP.ICompClusterSize                   3          3----3 bts comp
+                                                            2----2 bts comp
+                                                            1----adaptive according RSRP threshold
+& SIM.UL.DBlerTarget                           0.2          The BLER target for 1st Tx[0.2]
+& SIM.UL.DCompRsrpThresholdDB                   10          COMP rsrp threshold for cooperated BTS
+& SIM.UL.DEVMdb                               1000          EVM target(defaul 20db  1000 for no effect)
+& SIM.UL.DMuGThresholdDB                      -200          mu threshold in Geometry [-20]
+& SIM.UL.ERROR.BIsDMRSErrorOn                    0          1----DMRS Channel Estimation Error On [original = 1]
+                                                            0----off
+& SIM.UL.ERROR.BIsErrorEstimationOn              0          1----DMRS error considered in scheduler
+                                                            0----off
+& SIM.UL.ERROR.BIsSRSErrorOn                     0          1----SRS Channel Estimation Error On
+                                                            0----off
+& SIM.UL.ERROR.DDeltaMSEDb                      14          Db SRS error Delta MSE(7-9DB)[7]
+                                                            1---- srs error model applied to DRMS
+& SIM.UL.FirstTimeMode                           1          0----AllPairNoSpread
+                                                            1----AllPairTwoWaySpread
+                                                            2----SUFirstTwoWaySpread
+& SIM.UL.IHARQMaxTransNum                        4          The max HARQ Tx Num
+& SIM.UL.IHARQProcessNum                         4          The HARQ process Num for Uplink[4]
+& SIM.UL.IMIMOMode                               6          0----MRC[original = 0][Virtual mimo = 6]
+                                                            1----EBB
+                                                            2----Precoding
+                                                            3----Precoding_Debug
+                                                            6----Virtual MIMO
+                                                            7----COMP-UL
+& SIM.UL.DRBSupportedNumDoor                    10          number of RBSupported Door(higher is MU and lower is SU)
+& SIM.UL.IvmimoAdaptiveMode                      1          0----fixed mode[almost no gain]
+                                                            1----rate gain mode
+                                                            2----coorelation mode
+& SIM.UL.RateGainMode                            0          0----Rate2PairMode_1 RBSet The First(Old Mode)
+                                                            1----Rate2PairMode_2 Num of MUMIMO The First(New Mode)
+& SIM.UL.dLoad                                 0.5          different load 0.5,0.7,1
+& SIM.UL.dO2Iratio                             0.8          o2i UE ratio(0,1)
+& SIM.UL.iMaxRBFindNum                           1          Maxium time of number finding higher riority MS among the RBSet
+& SIM.UL.iRBSchLevel                             2          0----RightWaySpread
+                                                            1----NoSpread
+                                                            2----TwoWaySpread
+& SIM.UL.iRBsegmentNum                          10          divide the whole band to x parts (0---segmentation off)
+& SIM.UL.imaxRBsegNum                           10          maximum scheduled resource in UL, according to segements in ul; for partial band scheduling
+& SIM.UL.ERROR.IDmrsErrorOptions                 0

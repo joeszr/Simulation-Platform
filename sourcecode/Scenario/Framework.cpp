@@ -52,14 +52,14 @@ void Framework::InitFrame(){
     //初始化每个MS到各个BTS的路损和阴影衰落
     cm::LinkMatrix::Instance().Initialize();
     cout << "LinkMatrix Initialize() Succeeded!!!!!!!!!!!!!!!!!!!!!" << endl;
+    //建立MS和BTS的数据统计结构体（必须在 InitializeMSs 之前，否则 BasicOutput_Statistican 写入的 RSRP/LinkLoss 等会被清空）
+    Statistician::Instance().Initialize();
     //确定业务类型和确定主服务BTS，确定Geometry
     InitializeMSs();
     cout << "InitializeMSs() Succeeded!!!!!!!!!!!!!!!!!!" << endl;
     //初始化基站
     InitializeBSs();
     cout << "InitializeBSs() Succeeded!!!!!!!!!!!!!!!!!!" << endl;
-    //建立MS和BTS的数据统计结构体
-    Statistician::Instance().Initialize();
 }
 
 void Framework::PrintHead() {

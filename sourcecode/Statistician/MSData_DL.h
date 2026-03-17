@@ -21,6 +21,8 @@ public:
     BTSID m_ActiveBTS;
     ///移动台到激活基站的路径损耗
     double m_dLinkLossDB;
+    ///主服务小区参考信号接收功率RSRP，dBm
+    double m_dRSRP_dBm;
     ///移动台到激活基站的天线PatternGain
     double m_dAveAntGainDB;
     ///移动台ESA
