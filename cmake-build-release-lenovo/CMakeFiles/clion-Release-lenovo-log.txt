@@ -1,4 +1,5 @@
 /usr/bin/cmake -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" -S /home/lenovo/tmp/tmp.uP3g4KbRzU/Simulation-Platform -B /home/lenovo/tmp/tmp.uP3g4KbRzU/Simulation-Platform/cmake-build-release-lenovo
+-- Found Boost: 1.74.0
 -- Configuring done
 -- Generating done
 -- Build files have been written to: /home/lenovo/tmp/tmp.uP3g4KbRzU/Simulation-Platform/cmake-build-release-lenovo
