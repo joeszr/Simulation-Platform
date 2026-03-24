@@ -305,11 +305,11 @@ void Statistician::PrintHead() {
 //		DL.fOH_DMRS << "OH_DMRS_Rate"
 //			<< setw(20) << "OH_DMRS_Rate_Old" << endl;
 //		//定义输出格式
-		boost::format out_ms("%-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s");
+		boost::format out_ms("%-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s");
 		//输出下行移动台的表头
 		DL.fMS << out_ms % "MSID" % "BTSID" % "POSX(m)" % "POSY(m)" % "POSZ(m)" % "AveRate(kbps)" % "BLERTx1"
 			% "BLERTx2" % "BLERTx3" % "BLERTx4" % "LinkLossDB" % "AveSINRDB" % "PostSINRDB" % "PostSINRDBLOG"
-			% "GeometryDB" % "Rank1Num" % "Rank2Num" % "Rank3Num" % "Rank4Num" % "TM3Num" % "AveAntGainDB" % "CRSSINRDB" % "ESD" % "ESA" % "RSRP(dBm)";
+			% "GeometryDB" % "Rank1Num" % "Rank2Num" % "Rank3Num" % "Rank4Num" % "TM3Num" % "AveAntGainDB" % "CRSSINRDB" % "ESD" % "ESA" % "RSRP(dBm)" % "RSRP_Direct(dBm)" % "RSRP_WithRIS(dBm)";
 		DL.fMS << endl;
 //hyl 冗余
 //		// RedCap :输出下行移动台的表头
@@ -663,7 +663,7 @@ void Statistician::PrintTable() {
 //			<< setw(20) << m_dOH_DMRS_Rate_Old << endl;
 		// 输出移动台的数据
 		// 定义输出格式
-		boost::format out_ms("%-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s");
+		boost::format out_ms("%-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s %-30s");
 		for (int i = 0; i < static_cast<int> (m_MSData_DL.size()); ++i) {
 			if (Parameters::Instance().BASIC.IDLORUL != Parameters::UL) {
 				MSData_DL& msdata = m_MSData_DL[MSID(i).ToInt()];
@@ -672,10 +672,10 @@ void Statistician::PrintTable() {
                 ss << "(" << msdata.m_ActiveBTS.GetBSID().ToInt() << "," << msdata.m_ActiveBTS.GetIndex() << ")" ;
                 fMS_btsid = ss.str();
 				// 下行 RSRP(dBm) = 基站发射功率(dBm) - 链路损耗(dB)，输出时计算以保证与 LinkLossDB 一致
-				double dDL_RSRP_dBm = Parameters::Instance().Macro.DL.DMaxTxPowerDbm - msdata.m_dLinkLossDB;
+				//double dDL_RSRP_dBm = Parameters::Instance().Macro.DL.DMaxTxPowerDbm - msdata.m_dLinkLossDB;
 				DL.fMS << out_ms % i % fMS_btsid % msdata.m_x % msdata.m_y % msdata.m_z % msdata.DL.m_dAveRateKbps % msdata.DL.m_dBLERTx[1]
 					% msdata.DL.m_dBLERTx[2] % msdata.DL.m_dBLERTx[3] % msdata.DL.m_dBLERTx[4] % msdata.m_dLinkLossDB % L2DB(msdata.DL.m_dAveSINR) % L2DB(msdata.DL.m_dAvePostSINR) % msdata.DL.m_dLogAvePostSINR
-					% msdata.DL.m_dGeometryDB % msdata.DL.m_iRankHitNum[0] % msdata.DL.m_iRankHitNum[1] % msdata.DL.m_iRankHitNum[2] % msdata.DL.m_iRankHitNum[3] % msdata.DL.m_iTM3HitNum % msdata.m_dAveAntGainDB % L2DB(msdata.DL.m_dCRSSINR) % msdata.m_dESD % msdata.m_dESA % msdata.m_dRSRP_dBm;
+					% msdata.DL.m_dGeometryDB % msdata.DL.m_iRankHitNum[0] % msdata.DL.m_iRankHitNum[1] % msdata.DL.m_iRankHitNum[2] % msdata.DL.m_iRankHitNum[3] % msdata.DL.m_iTM3HitNum % msdata.m_dAveAntGainDB % L2DB(msdata.DL.m_dCRSSINR) % msdata.m_dESD % msdata.m_dESA % msdata.m_dRSRP_dBm% msdata.m_dRSRP_Direct_dBm % msdata.m_dRSRP_WithRIS_dBm;
 				DL.fMS << endl;
 				if (msdata.DL.m_iTM3HitNum > 0) {
 					cout << "msdata.DL.m_iTM3HitNum= " << (msdata.DL.m_iTM3HitNum) << endl;

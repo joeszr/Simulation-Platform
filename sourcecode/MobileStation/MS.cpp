@@ -37,6 +37,8 @@
 #include "MSMUEBBRankARxer.h"
 #include "SRSTxer.h"
 #include "MS.h"
+
+#include "RISCouplingloss.h"
 #include "../ChannelModel/LinkMatrix.h"
 //@thread
 std::mutex initialize_lock;
@@ -1056,7 +1058,28 @@ void MS::BasicOutput_Statistican() {
     Statistician::Instance().m_MSData_DL[m_ID.ToInt()].DL.m_dGeometryDB = m_dGeometryDB_SNR;
     // RSRP(dBm) = 主服务基站发射功率(dBm) - 链路损耗(dB)
     double dBS_TxPowerDbm = Parameters::Instance().Macro.DL.DMaxTxPowerDbm;
-    Statistician::Instance().m_MSData_DL[m_ID.ToInt()].m_dRSRP_dBm = dBS_TxPowerDbm - dServeLinkLossDB;
+    // Statistician::Instance().m_MSData_DL[m_ID.ToInt()].m_dRSRP_dBm = dBS_TxPowerDbm - dServeLinkLossDB;
+    // 直连 RSRP（不含RIS）— 等同于原始 RSRP
+    Statistician::Instance().m_MSData_DL[m_ID.ToInt()].m_dRSRP_Direct_dBm
+        = dBS_TxPowerDbm - dServeLinkLossDB;
+
+    // 含RIS的合并RSRP
+    if (Parameters::Instance().BASIC.BISRIS) {
+        // 直连接收功率（线性）
+        double dDirectPower_linear = DB2L(dBS_TxPowerDbm - dServeLinkLossDB);  // mW
+        // RIS 级联耦合损耗（线性值）
+        double dRISCouplingLoss_linear = cm::RISCouplingloss::Instance()
+            .InitializeRIS_CouplingLoss_linear_beamscannning(
+                m_MainServBTS.GetBTS(), *this);
+        // RIS 接收功率（线性）
+        double dRISPower_linear = DB2L(dBS_TxPowerDbm) * dRISCouplingLoss_linear;
+        // 合并功率
+        Statistician::Instance().m_MSData_DL[m_ID.ToInt()].m_dRSRP_WithRIS_dBm
+            = L2DB(dDirectPower_linear + dRISPower_linear);
+    } else {
+        Statistician::Instance().m_MSData_DL[m_ID.ToInt()].m_dRSRP_WithRIS_dBm
+            = dBS_TxPowerDbm - dServeLinkLossDB;  // 无RIS时两者相同
+    }
     std::lock_guard<std::mutex> l(MacroMS_lock);
     //hyl 冗余
 //    if (BSManager::IsMacro(m_MainServBTS)) {

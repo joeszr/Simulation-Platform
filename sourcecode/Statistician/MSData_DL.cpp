@@ -10,6 +10,8 @@ MSData_DL::MSData_DL() {
     m_ActiveBTS = BTSID(-1, -1);
     m_dLinkLossDB = 0;
     m_dRSRP_dBm = 0;
+   m_dRSRP_Direct_dBm = 0;
+    m_dRSRP_WithRIS_dBm = 0;
     m_dAveAntGainDB = 0;
     m_dESA = 0;
     m_dESD = 0;

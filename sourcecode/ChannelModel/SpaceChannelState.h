@@ -69,6 +69,11 @@ namespace cm {
         itpp::cmat Get_mD_after_ABF_for_all_active_TXRU_Pairs(int _scid);
         itpp::cmat GetH_after_ABF_for_all_active_TXRU_Pairs_RISIntf_BestPanel(int _scid);
 
+        /// 等效耦合增益（线性域），用于输出/调度等“LinkLoss”口径
+        /// scid: 频点采样索引（已做 /ICarrierSampleSpace 归一前的索引）
+        double GetEquivalentCouplingLossLinear_Direct(int _scid);
+        double GetEquivalentCouplingLossLinear_DirectPlusRIS(int _scid);
+
 
 
      public:

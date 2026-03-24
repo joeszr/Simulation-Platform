@@ -23,6 +23,10 @@ public:
     double m_dLinkLossDB;
     ///主服务小区参考信号接收功率RSRP，dBm
     double m_dRSRP_dBm;
+    ///20260323仅直连路径RSRP(不含RIS)，dBm
+    double m_dRSRP_Direct_dBm;
+    ///含RIS级联路径的合并RSRP，dBm
+    double m_dRSRP_WithRIS_dBm;
     ///移动台到激活基站的天线PatternGain
     double m_dAveAntGainDB;
     ///移动台ESA

@@ -377,6 +377,8 @@ struct PLINK_CONTROL {
     int IISShadowFadingUsed;
 
     int Islot4Hupdate;
+    /// 信道更新方式，0按照实际beam更新，1按照最强更新
+    int IUpdateMode;
 };
 
 struct PMIMO_CONTROL {

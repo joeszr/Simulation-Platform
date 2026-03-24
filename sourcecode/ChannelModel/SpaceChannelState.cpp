@@ -26,6 +26,7 @@
 #include "../NetworkDrive/Clock.h"
 #include <algorithm>  // 用于 std::max 和 std::min
 #include <iostream>   // 用于 cerr
+#include <itpp/stat/misc_stat.h>
 using namespace cm;
 
 ///构造函数
@@ -1051,10 +1052,30 @@ complex<double> SpaceChannelState::GetH_after_ABF_with_BestBeams_RISonly(
         std::shared_ptr<cm::CTXRU> _pUE_TXRU) {
 
     pair<int, int> txrupair = make_pair(_pBS_TXRU->GetTXRUIndex(), _pUE_TXRU->GetTXRUIndex());
-    //std::map<std::pair<int, int>, std::vector<std::complex<double> > > H = m_TXRUPairID_2_FreqH;
-    complex<double> CTEMP =  m_TXRUPairID_2_FreqH_RIS[txrupair][_scid];
+    auto it = m_TXRUPairID_2_FreqH_RIS.find(txrupair);
+    if (it == m_TXRUPairID_2_FreqH_RIS.end()) {
+        return complex<double>(0.0, 0.0);
+    }
+    if (_scid < 0 || _scid >= static_cast<int>(it->second.size())) {
+        return complex<double>(0.0, 0.0);
+    }
+    return it->second[_scid];
+}
 
-    return CTEMP;
+double SpaceChannelState::GetEquivalentCouplingLossLinear_Direct(int _scid) {
+    itpp::cmat H = GetH_after_ABF_for_all_active_TXRU_Pairs(_scid);
+    if (H.rows() == 0 || H.cols() == 0) return 0.0;
+    double nf = itpp::norm(H, "fro");
+    double p = (nf * nf) / static_cast<double>(H.rows() * H.cols());
+    return p;
+}
+
+double SpaceChannelState::GetEquivalentCouplingLossLinear_DirectPlusRIS(int _scid) {
+    itpp::cmat H = GetH_after_ABF_for_all_active_TXRU_Pairs_RISIntf_BestPanel(_scid);
+    if (H.rows() == 0 || H.cols() == 0) return 0.0;
+    double nf = itpp::norm(H, "fro");
+    double p = (nf * nf) / static_cast<double>(H.rows() * H.cols());
+    return p;
 }
 
 itpp::cmat SpaceChannelState::GetH_after_ABF_for_all_active_TXRU_Pairs(

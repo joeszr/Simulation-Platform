@@ -312,7 +312,19 @@ double LinkMatrix::GetCouplingLossDB(Tx& _tx, Rx& _rx) {
 
     //******************方法2：适用于简化的信道初始化方法****************
     //    if (IsStrong(_tx, _rx)) {
-    return L2DB(m_TxRx2CS[txrxid].m_pSCS->m_dStrongestCouplingLoss_Linear); //cwq dahuawu
+    if (Parameters::Instance().BASIC.BISRIS) {
+        // BISRIS=1 时：对“LinkLoss/RSRP/调度 PL”等口径采用直连+RIS 的等效耦合增益
+        // 这里使用合并信道矩阵的平均功率作为等效耦合增益（线性域），再转 dB。
+        // 若级联信道尚未填充，则回退到直连 strongest coupling loss。
+        SpaceChannelState* pSCS = m_TxRx2CS[txrxid].m_pSCS.get();
+        if (pSCS) {
+            double eq = pSCS->GetEquivalentCouplingLossLinear_DirectPlusRIS(0);
+            if (eq > 0) {
+                return L2DB(eq);
+            }
+        }
+    }
+    return L2DB(m_TxRx2CS[txrxid].m_pSCS->m_dStrongestCouplingLoss_Linear); // 直连口径
     //    } else {
     //        return m_TxRx2CS[txrxid].m_BCS.m_LoSLinkLossDB;
     //    }
@@ -849,7 +861,7 @@ itpp::cmat LinkMatrix::GetFadingMat_wABF_for_all_active_TXRU_Pairs2(
 
     return GetFadingMat_wABF_for_all_active_TXRU_Pairs(_tx, _rx, _scid);
 }
-///用处
+///引入RIS
 const itpp::cmat LinkMatrix::GetFadingMat_wABF_for_all_active_TXRU_Pairs_RISIntf(
      Tx& _tx, Rx& _rx, int _scid) {
 
