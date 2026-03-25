@@ -144,7 +144,9 @@ namespace cm {
         void Initialize(Rx& _rx);
 
         void RISInitialize_thread1(MS &ms);
-
+        ///20260324
+        void RISInitialize_TxRIS(); ///< 仅初始化 BTS→RIS 信道（不需要 MS 信息）
+        void RISInitialize_RxMS();  ///< 仅初始化 RIS→MS 信道（需要 m_pRxNode 已就绪）
         /// @brief 重置函数，清空本类所持有的所有链路
         void Reset();
         /// @brief 时间驱动的接口函数，将所有链路更新到输入参数所指定的时间点

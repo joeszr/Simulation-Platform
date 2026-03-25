@@ -179,25 +179,40 @@ ofstream& Observer::Print(const string& _str) {
     // 在静态初始化阶段，如果Observer未启用，直接返回静态成员ofsnull，避免访问Directory
     // 这样可以避免静态初始化顺序问题
     if (!m_bIsEnable) {
-        // 使用类的静态成员ofsnull，它在类外已经初始化
+        // 使用类的静态成员 ofsnull，它在类外已经初始化
         return ofsnull;
     }
-    
-    // 只有在Observer启用时才尝试创建文件流
+
+    // 只有在 Observer 启用时才尝试创建文件流
     // 此时应该已经过了静态初始化阶段
     if (m_mOfstr.find(_str) == m_mOfstr.end()) {
         boost::filesystem::path filename;
-        filename = Directory::Instance().GetPath(_str + ".txt"); //.directory_string();   
-        std::shared_ptr < boost::filesystem::ofstream> p = std::make_shared< boost::filesystem::ofstream > (filename);
-        
-        if(p) {
-            m_mOfstr[_str] = p;            
-        } else {
-            assert(false);
+        try {
+            filename = Directory::Instance().GetPath(_str + ".txt"); //.directory_string();
+            std::shared_ptr < boost::filesystem::ofstream> p = std::make_shared< boost::filesystem::ofstream > (filename);
+
+            // 检查文件流是否有效
+            if(p && p->is_open()) {
+                m_mOfstr[_str] = p;
+                return *m_mOfstr[_str];
+            } else {
+                // 文件打开失败，记录错误并返回空流
+                cerr << "Error: Failed to open file: " << filename.string() << endl;
+                return ofsnull;
+            }
+        } catch (const std::exception& e) {
+            // 捕获可能的异常（如路径无效、权限问题等）
+            cerr << "Error creating file stream for " << _str << ": " << e.what() << endl;
+            return ofsnull;
         }
-        return *p;            
     } else {
-        return *m_mOfstr[_str];
+        // 检查已存在的文件流是否仍然有效
+        if (m_mOfstr[_str] && m_mOfstr[_str]->is_open()) {
+            return *m_mOfstr[_str];
+        } else {
+            // 文件流无效或已关闭，返回空流
+            return ofsnull;
+        }
     }
 }
 

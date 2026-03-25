@@ -95,6 +95,10 @@ void BasicChannelState::InitializeSpread(ITU, Point& _tx, Rx& _rx) {
             = complex<double>(_rx.GetX(), _rx.GetY()) + complex<double>(_tx.GetX(), _tx.GetY());
     if (IsMacroToUE()) {
         if (m_bIsLOS) {
+            //空指针检查
+            if (!m_pDSMapLOS || !m_pAODMapLOS || !m_pAOAMapLOS || !m_pSFMapLOS || !m_pKMapLOS) {
+                return;
+            }
             x(0, 0) = m_pDSMapLOS ->ReadMap(position);
             x(1, 0) = m_pAODMapLOS->ReadMap(position);
             x(2, 0) = m_pAOAMapLOS->ReadMap(position);

@@ -1219,6 +1219,17 @@ void SpaceChannelState::CalcFreqH(double _dTimeSec) {
             int BS_BeamIndex = m_PanelPairID_2_StrongestBSBeamIndex(BS_PanelIndex, UE_PanelIndex);
             int UE_BeamIndex = m_PanelPairID_2_StrongestUEBeamIndex(BS_PanelIndex, UE_PanelIndex);
 
+            // CalculateRSRP_new() 若未找到有效耦合会提前返回，矩阵仍为初值 -1；后续 UpdateH→CalcFreqH
+            // 会把非法波束下标传入 CalcAggregateGain / 子径计算，导致未定义行为并在 complex 乘法处崩溃。
+            if (BS_BeamIndex < 0 || UE_BeamIndex < 0) {
+                cerr << "Warning: invalid beam indices in CalcFreqH for panel pair ("
+                     << BS_PanelIndex << "," << UE_PanelIndex << "): BS_Beam=" << BS_BeamIndex
+                     << " UE_Beam=" << UE_BeamIndex
+                     << ", fallback to (0,0). Fix coupling/RSRP or geometry." << endl;
+                BS_BeamIndex = 0;
+                UE_BeamIndex = 0;
+            }
+
             BOOST_FOREACH(std::shared_ptr<CTXRU>& pBS_TXRU,
                     pBSAntennaPanel->GetvTXRUs()) {
 

@@ -152,7 +152,6 @@ void SubpathState::Initialize() {
     int UEPannelNum = m_pPathState->m_pBCS->m_pRx->GetPannelNum();
     int BSTotalTxRUNum = m_pPathState->m_pBCS->m_pTx->GetTotalTxRUNum();//per panel
     int UETotalTxRUNum = m_pPathState->m_pBCS->m_pRx->GetTotalTxRUNum();//per panel
-    m_bOnlyFirst = false;
     m_dUpdateInterval = Parameters::Instance().LINK_CTRL.Islot4Hupdate * Parameters::Instance().BASIC.DSlotDuration_ms/1000;
     if(!HaveAllocate){
         HaveAllocate=true;
@@ -517,26 +516,21 @@ std::complex<double> SubpathState::InitialCalcSubpath_TimeH_for_TXRUPair(
     std::complex<double> cTemp5 = exp(
             UE_H_Offset_in_Antenna * m_cUE_dH_Unit_withAntennaPanel[_UE_AntennaPanelIndex]
             + UE_V_Offset_in_Antenna * m_cUE_dV_Unit_withAntennaPanel[_UE_AntennaPanelIndex]);
-    if (!m_bOnlyFirst) {
-        m_bOnlyFirst=true;
-        assert(_BS_AntennaPanelIndex==0);
-        assert(_UE_AntennaPanelIndex==0);
-        assert(_pBS_TXRU->GetTXRUIndex()==0);
-        assert(_pUE_TXRU->GetTXRUIndex()==0);
-
+    // 原 m_bOnlyFirst 仅在首对 TXRU 上计算 BS/UE_AggregateGain，后续 TXRU 对会跳过赋值，
+    // 成员未初始化（构造函数未置零）→ complex 为垃圾值 → 在 std::operator* 处 SIGSEGV。
+    // CalcFreqH 会遍历多 TXRU，必须为每一对重新计算波束增益。
+    {
         double dEODRAD_GCS = DEG2RAD(m_EODDeg);
         double dAODRAD_GCS = DEG2RAD(m_AODDeg);
         BS_AggregateGain = _pBS_TXRU->CalcAggregateGain(
                 dAODRAD_GCS, dEODRAD_GCS, BS_BeamIndex);
 
-        // calc UE side
         double dEOARAD_GCS = DEG2RAD(m_EOADeg);
         double dAOARAD_GCS = DEG2RAD(m_AOADeg);
 
         UE_AggregateGain = _pUE_TXRU->CalcAggregateGain(
                 dAOARAD_GCS, dEOARAD_GCS, UE_BeamIndex);
     }
-
 
     std::complex<double> cTempA = cTempD * cTemp5 * cTemp4 * BS_AggregateGain * UE_AggregateGain;
     std::complex<double> cSubpath_TimeH = cTempA

@@ -9,6 +9,7 @@
 #include "../ChannelModel/AOGOmni.h"
 #include "../ChannelModel/AOGSector.h"
 #include "../ChannelModel/Rx.h"
+#include "../ChannelModel/MSRx.h"
 #include "../ChannelModel/WrapAround.h"
 #include "../ChannelModel/LinkMatrix.h"
 #include "../MobileStation/MSID.h"
@@ -514,6 +515,8 @@ void MS::UE_attach_new() {
 }
 std::mutex outlock;
 bool MS::Initialize() {
+    // 20260324初始化 RIS 计算所需的 MSRxNode（使用当前已分配的 MS 位置）
+    m_pRxNode = std::make_shared<cm::MSRxNode>(*this);
     m_clsMacMs.setMs(this);
     uci.initilize(m_ID);
     // 选择主服务基站

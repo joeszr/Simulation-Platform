@@ -88,12 +88,16 @@ int GaussianMap::Get_mapsize() const{
     return map_size;
 }
 
-double GaussianMap::ReadMap(complex<double> position) const {
+double GaussianMap::ReadMap(const complex<double>& position) const {
     complex <double> distance;
 
     double x_pos;
 
     double y_pos;
+
+    if (corrdist <= 0.0) {
+        return 0.0;
+    }
 
     distance = 4.5 * position / corrdist;
 

@@ -129,6 +129,11 @@ void NetWorkDrive::DropInitialize() {
     Statistics::Instance().Initialize();
     MSManager::Instance().DistributeMSs();
     cout << "DistributeMSs() Succeeded!!!!!!!" << endl;
+    //20260324添加RIS（仅第一个drop，RIS位置固定不变）
+    if (G_ICurDrop == 1 && Parameters::Instance().BASIC.BISRIS) {
+        BSManager::Instance().AddRISs();
+        BSManager::Instance().DistributeRISs();
+    }
     //初始化每个MS到各个BTS的路损和阴影衰落
     cm::LinkMatrix::Instance().Initialize();
     cout << "LinkMatrix Initialize() Succeeded!!!!!!!!!!!!!!!!!!!!!" << endl;
@@ -137,6 +142,11 @@ void NetWorkDrive::DropInitialize() {
     //确定业务类型和确定主服务BTS，确定Geometry
     MSManager::Instance().InitializeMSs();
     cout << "InitializeMSs() Succeeded!!!!!!!!!!!!!!!!!!" << endl;
+    //20260324初始化RIS大尺度链路（需在InitializeMSs之后，RIS信道需要MS位置）
+    if (Parameters::Instance().BASIC.BISRIS) {
+        cm::LinkMatrix::Instance().RISInitialize();
+        cout << "RIS Initialize() Succeeded!!!!!!!!!!!!!!!!!!!!!" << endl;
+    }
     //初始化基站
     BSManager::Instance().InitializeBSs();
     cout << "InitializeBSs() Succeeded!!!!!!!!!!!!!!!!!!" << endl;

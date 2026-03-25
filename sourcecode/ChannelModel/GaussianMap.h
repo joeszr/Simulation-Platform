@@ -41,7 +41,8 @@ namespace cm {
         virtual ~GaussianMap();
 
         ///reading data from the lognmap
-        double ReadMap(complex<double> position) const;
+
+        double ReadMap(const complex<double>& position) const;
 
         ///cac the value
         double Calculate(complex<double> ant_mtpos, complex<double> mt_pos, complex<double> zoffset) const;

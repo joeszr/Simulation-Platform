@@ -36,7 +36,9 @@
 #include "PathLossPico2UE_UrbanMicroNLOS.h"
 #include "PathLossPico2UE_UrbanMicroO2I.h"
 #include "Rx.h"
+#include "RISRx.h"
 #include "Tx.h"
+#include "RISTx.h"
 #include "LinkMatrix.h"
 #include "../Parameters/Parameters.h"
 #include "PathState.h"
@@ -47,6 +49,7 @@
 #include "CTXRU.h"
 #include <sys/time.h>
 #include"./functions.h"
+
 std::mutex LinkMatrix_Initialize_mutex;
 using namespace cm;
 //@threads
@@ -202,10 +205,8 @@ void LinkMatrix::Initialize(Rx& _rx) {
 
 
 
-void LinkMatrix::RISInitialize() {
-    ms_finished = 0;
-    link2_finished = 0;
-
+///仅初始化 BTS→RIS 信道（填充 m_TxRIS2CS），不依赖 MS 信息
+void LinkMatrix::RISInitialize_TxRIS() {
     // （可选）TXRU 规模参数
     int IHAntNumPerPanel = Parameters::Instance().Macro.IHAntNumPerPanel;
     int IVAntNumPerPanel = Parameters::Instance().Macro.IVAntNumPerPanel;
@@ -217,7 +218,7 @@ void LinkMatrix::RISInitialize() {
     // 1) 初始化 Tx→RIS 并做小尺度：
     for (BTSID btsid = BTSID::Begin(); btsid <= BTSID::End(); ++btsid) {
         BTS& bts = btsid.GetBTS();
-        Tx&  tx  = Tx::GetTx(btsid.GetTotalIndex()); // 三四是 Tx/Rx 体系
+        Tx&  tx  = Tx::GetTx(btsid.GetTotalIndex());
         for (int i = 0; i < bts.GetRISNum(); ++i) {
             RIS& ris = bts.GetRIS(i);
             int risid = ris.GetRISID().GetTotalIndex();
@@ -227,18 +228,22 @@ void LinkMatrix::RISInitialize() {
             m_TxRIS2CS[txrisid].Initialize(tx, ris);
             m_TxRIS2CS[txrisid].InitStrongSCM();
             m_TxRIS2CS[txrisid].SetStrong();
-            m_TxRIS2CS[txrisid].CalH();   // <<< 小尺度生成
+            m_TxRIS2CS[txrisid].CalH();
         }
     }
-
-    // 2) 预分配 RIS→MS（单线程安全简化）：
+}
+    ///仅初始化 RIS→MS 信道（填充 m_RISRx2CS），需要 MS::m_pRxNode 已就绪
+    void LinkMatrix::RISInitialize_RxMS() {
+        ms_finished = 0;
+        link2_finished = 0;
     for (int msIdx = 0; msIdx <= MSID::End().ToInt(); ++msIdx) {
-        MS& ms  = MSID(msIdx).GetMS();
-        RISInitialize_thread1(ms);  // 只建索引+小尺度
-        // （可选）如果你后面要做波束/相位“策略”选择，可在这里调用 RISInitialize(ms)
+        MS& ms = MSID(msIdx).GetMS();
+        RISInitialize_thread1(ms);
     }
-
-    // （可选）统计输出同一二
+}
+void LinkMatrix::RISInitialize() {
+    RISInitialize_TxRIS();
+    RISInitialize_RxMS();
 }
 
 ///20251117
