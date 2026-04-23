@@ -26,7 +26,9 @@
 #include "../NetworkDrive/Clock.h"
 #include <algorithm>  // 用于 std::max 和 std::min
 #include <iostream>   // 用于 cerr
+#include <limits>     // 用于 std::numeric_limits
 #include <itpp/stat/misc_stat.h>
+#include <memory>
 using namespace cm;
 
 ///构造函数
@@ -49,7 +51,8 @@ SpaceChannelState::SpaceChannelState(BasicChannelState* _pBCS) {
     m_dStrongestCouplingLoss_Linear = 0;
 
     //正常设置
-    m_H_updated_period_ms = Parameters::Instance().LINK_CTRL.Islot4Hupdate*Parameters::Instance().BASIC.DSlotDuration_ms; //
+    m_H_updated_period_ms =
+            Parameters::Instance().LINK_CTRL.Islot4Hupdate * Parameters::Instance().BASIC.DSlotDuration_ms; //
 
     // 20180419
     m_LastUpdateTime_ms = -m_H_updated_period_ms;
@@ -75,9 +78,12 @@ SpaceChannelState::SpaceChannelState(BasicChannelState* _pBCS) {
 //            1)
 //            );
     m_TXRUPairID_2_FreqH_Matrix.resize(P::s().FX.ICarrierNum / P::s().FX.ICarrierSampleSpace,
-                                itpp::cmat(pUEAntenna->GetTotalTXRU_Num(), pBSAntenna->GetTotalTXRU_Num()));
+                                       itpp::cmat(pUEAntenna->GetTotalTXRU_Num(), pBSAntenna->GetTotalTXRU_Num()));
+   //20260415 大小 = V_BeamNum × H_BeamNum（基站总波束数量
+    if (m_pBCS->m_iLinkCategory == 1) {
+        m_TXRUPairID_2_FreqH_BS2RIS.resize(pBSAntenna->Get_V_BeamNum() * pBSAntenna->Get_H_BeamNum());
+    }
 }
-
 SpaceChannelState::~SpaceChannelState() {
     m_pBCS = nullptr;
 }
@@ -85,11 +91,17 @@ SpaceChannelState::~SpaceChannelState() {
 //LinkMatrix::Initialize(_rx) -> m_BCS.Initialize(_tx, _rx) 
 
 void SpaceChannelState::Initialize() {
+    int _dbg_txId = m_pBCS->m_pTx->GetTxID();
+    int _dbg_rxId = m_pBCS->m_pRx->GetRxID();
+    cerr << "[INIT] TX=" << _dbg_txId << " RX=" << _dbg_rxId
+         << " step5:PathDelay..." << flush;
     //////////////////step5//////////////////
     InitializePathDelay();
+    cerr << "OK  step6:PathPower..." << flush;
     //////////////////step6//////////////////
     InitializePathPower();
 
+    cerr << "OK  step7:AOD/AOA/EOD/EOA..." << flush;
     //////////////////step7//////////////////
     InitializeAOD(ITU());
     InitializeAOA(ITU());
@@ -109,16 +121,24 @@ void SpaceChannelState::Initialize() {
             break;
     }
 
+    cerr << "OK  step8-11(" << m_vPath.size() << " paths):" << flush;
     for (unsigned i = 0; i < m_vPath.size(); ++i) {
         //m_vPath[i].Initialize(ITU(), i);
         /////////Path初始化////////////////
+        // [诊断] 将打印细化到每个子步骤，精确定位崩溃位置
+        cerr << "[" << i << ":8" << "]" << flush;
         step8(i);
+        cerr << "[" << i << ":9" << "]" << flush;
         step9(i);
+        cerr << "[" << i << ":10" << "]" << flush;
         step10(i);
+        cerr << "[" << i << ":11A" << "]" << flush;
         step11_A(i);
+        cerr << "[" << i << ":11B" << "]" << flush;
         step11_B(i);
-
+        cerr << "[" << i << ":OK]" << flush;
     }
+    cerr << " AllPathsOK" << endl;
     
     Tx* pTx = this->m_pBCS->m_pTx;
     Rx* pRx = this->m_pBCS->m_pRx;
@@ -138,6 +158,8 @@ void SpaceChannelState::Initialize() {
 //        }
 //    }
 
+    cerr << "[INIT] TX=" << _dbg_txId << " RX=" << _dbg_rxId
+         << " CalculateRSRP..." << flush;
     //CalculateRSRP_new();
     //20250114
     // 修复数组越界问题：确保在所有情况下都正确初始化矩阵
@@ -149,7 +171,11 @@ void SpaceChannelState::Initialize() {
     else {
         CalculateRSRP_new();
     }
+    cerr << "OK" << endl;
 
+    cerr << "[INIT] TX=" << _dbg_txId << " RX=" << _dbg_rxId
+         << " DelayQuaPrecompute(" << m_vPath.size() << "x"
+         << (P::s().FX.ICarrierNum / P::s().FX.ICarrierSampleSpace) << ")..." << flush;
     //chty 1111 b
     m_vdTempFromDelayQua.resize(m_vPath.size(),vector<std::complex<double>>(P::s().FX.ICarrierNum / P::s().FX.ICarrierSampleSpace));
     for(auto n=0;n<m_vdTempFromDelayQua.size();n++){
@@ -162,13 +188,17 @@ void SpaceChannelState::Initialize() {
     m_vD.resize(Parameters::Instance().BASIC.ISCNum/ cm::P::s().FX.ICarrierSampleSpace);
     m_vbIsLatest.resize(Parameters::Instance().BASIC.ISCNum/ cm::P::s().FX.ICarrierSampleSpace);
     //chty 1111 e
+    cerr << "OK" << endl;
     if (Parameters::Instance().BASIC.DWorkingMode == Parameters::WorkingMode_Normal)
     {
+        cerr << "[INIT] TX=" << _dbg_txId << " RX=" << _dbg_rxId
+             << " UpdateH(CalcFreqH)..." << flush;
         double time = Clock::Instance().GetTimeSec();
         UpdateH(time); //-> CalcFreqH -> m_vPath[n].CalcPath_TimeH_for_TXRUPair(pBS_TXRU, pUE_TXRU, j, i, _dTimeSec)
         //-> m_vSubpath[i].CalcSubpath_TimeH_for_TXRUPair(_pBS_TXRU, _pUE_TXRU,_AntIndex_in_BS_TXRU, _AntIndex_in_UE_TXRU, _time_s)
         //当UpdateH调用完成之后，所有的信道信息都已经完成初始化，而CalcFreqH(_dTimeSec)在WorkSlot(_dTimeSec)中被调用，用于计算h(t)
         //而ChannelInfo并不需要t，到此完成所有信道信息的统计，可以进行输出
+        cerr << "OK" << endl;
     }
 }
 //20260115
@@ -772,18 +802,27 @@ void SpaceChannelState::CalculateRSRP_new() {
             pBSAntenna->GetTotalAntennaPanel_Num(),
             pUEAntenna->GetTotalAntennaPanel_Num()) * (-1);
     map<pair<int,int>,double> mBeam2Couplingloss;
-    // 修复：使用成员变量而不是局部变量
-    m_dStrongestCouplingLoss_Linear = 0;
+    // 修复：使用 -infinity 作为初始值，确保第一个有效值（即使为0）也能被选中
+    m_dStrongestCouplingLoss_Linear = -std::numeric_limits<double>::infinity();
     // 修复：初始化最佳面板指针为空，确保后续检查有效
     m_pBest_BS_Panel = nullptr;
     m_pBest_UE_Panel = nullptr;
+    // 诊断：打印beam信息
+    cerr << "[RSRP] TX=" << m_pBCS->m_pTx->GetTxID()
+         << " RX=" << m_pBCS->m_pRx->GetRxID()
+         << " BSPanels=" << pBSAntenna->GetTotalAntennaPanel_Num()
+         << " UEPanels=" << pUEAntenna->GetTotalAntennaPanel_Num()
+         << " BS_HBeam=" << pBSAntenna->Get_H_BeamNum()
+         << " BS_VBeam=" << pBSAntenna->Get_V_BeamNum()
+         << " UE_HBeam=" << pUEAntenna->Get_H_BeamNum()
+         << " UE_VBeam=" << pUEAntenna->Get_V_BeamNum() << flush;
     BOOST_FOREACH(std::shared_ptr<AntennaPanel> pBSAntennaPanel,
             pBSAntenna->GetvAntennaPanels()) {
 
         BOOST_FOREACH(std::shared_ptr<AntennaPanel> pUEAntennaPanel,
                 pUEAntenna->GetvAntennaPanels()) {
 
-            double StrongestCouplingLoss_Linear_per_PanelPair = 0;
+                        double StrongestCouplingLoss_Linear_per_PanelPair = -std::numeric_limits<double>::infinity();
 
             std::shared_ptr<cm::CTXRU> pBS_TXRU0 =
                     pBSAntennaPanel->GetFirstTXRU();
@@ -814,7 +853,7 @@ void SpaceChannelState::CalculateRSRP_new() {
                                 dCouplingLoss > mBeam2Couplingloss[beampair_temp]) {
                                 mBeam2Couplingloss[beampair_temp] = dCouplingLoss;
                             }
-                            
+
                             if (dCouplingLoss > StrongestCouplingLoss_Linear_per_PanelPair) {
                                 StrongestCouplingLoss_Linear_per_PanelPair = dCouplingLoss;
 
@@ -842,12 +881,23 @@ void SpaceChannelState::CalculateRSRP_new() {
     // 修复：清空之前的映射，确保数据一致性
     mBeampair2Couplingloss_Linear.clear();
     StrongBeam(mBeam2Couplingloss);
+    cerr << " maxCL=" << m_dStrongestCouplingLoss_Linear
+         << " bestPanelSet=" << (m_pBest_BS_Panel != nullptr ? "yes" : "no") << flush;
     
     // 修复：添加安全检查，确保最佳面板已设置
     if (!m_pBest_BS_Panel || !m_pBest_UE_Panel) {
-        cerr << "Error: m_pBest_BS_Panel or m_pBest_UE_Panel is null in CalculateRSRP_new()!" << endl;
-        cerr << "This may indicate that no valid coupling loss was found." << endl;
-        // 如果最佳面板未设置，跳过断言检查
+        // beam 向量为空（iHBSBeamNum/iVBSBeamNum = 0），RSRP 无法计算。
+        // 此时 CalcFreqH 会 skip 所有 panel pair，信道矩阵保持零值，
+        // 只需保证指针不为 null 以防止其他地方的 null 解引用。
+        cerr << "Warning: m_pBest_BS_Panel or m_pBest_UE_Panel is null in CalculateRSRP_new()!" << endl;
+        cerr << "This may indicate that beam vectors are empty (iHBeamNum=" 
+             << pBSAntenna->Get_H_BeamNum() << ", iVBeamNum=" 
+             << pBSAntenna->Get_V_BeamNum() << "). Using first panel as fallback." << endl;
+        // fallback: 使用第一个 panel 以防止 null 指针
+        if (pBSAntenna->GetTotalAntennaPanel_Num() > 0)
+            m_pBest_BS_Panel = pBSAntenna->GetFirstAntennaPanelPointer().get();
+        if (pUEAntenna->GetTotalAntennaPanel_Num() > 0)
+            m_pBest_UE_Panel = pUEAntenna->GetFirstAntennaPanelPointer().get();
         return;
     }
     
@@ -1182,13 +1232,14 @@ void SpaceChannelState::CalcFreqH(double _dTimeSec) {
         m_PanelPairID_2_StrongestUEBeamIndex.rows() != BS_PanelNum || 
         m_PanelPairID_2_StrongestUEBeamIndex.cols() != UE_PanelNum) {
         // 矩阵未初始化或大小不匹配，这是一个严重的程序错误
-        // 输出错误信息并尝试重新初始化（作为最后的修复手段）
+        // 输出错误信息并直接返回（不能递归调用 CalculateRSRP_new，否则可能造成死循环）
         cerr << "Error: Matrix m_PanelPairID_2_StrongestBSBeamIndex not properly initialized!" << endl;
         cerr << "Expected size: " << BS_PanelNum << "x" << UE_PanelNum 
              << ", Actual size: " << m_PanelPairID_2_StrongestBSBeamIndex.rows() 
              << "x" << m_PanelPairID_2_StrongestBSBeamIndex.cols() << endl;
-        // 尝试重新初始化（这可能不是最佳解决方案，但可以防止崩溃）
-        CalculateRSRP_new();
+        cerr << "Hint: CalculateRSRP_new() may have returned early due to empty beam vectors." << endl;
+        // 直接返回，而非递归调用 CalculateRSRP_new()（避免潜在死循环）
+        return;
     }
 
     BOOST_FOREACH(std::shared_ptr<AntennaPanel>& pBSAntennaPanel,
@@ -1225,9 +1276,8 @@ void SpaceChannelState::CalcFreqH(double _dTimeSec) {
                 cerr << "Warning: invalid beam indices in CalcFreqH for panel pair ("
                      << BS_PanelIndex << "," << UE_PanelIndex << "): BS_Beam=" << BS_BeamIndex
                      << " UE_Beam=" << UE_BeamIndex
-                     << ", fallback to (0,0). Fix coupling/RSRP or geometry." << endl;
-                BS_BeamIndex = 0;
-                UE_BeamIndex = 0;
+                     << ". Skipping this panel pair (beam vector is empty)." << endl;
+                continue;  // 直接跳过，不能 fallback 到 0，因为 m_vEscanRAD 可能为空
             }
 
             BOOST_FOREACH(std::shared_ptr<CTXRU>& pBS_TXRU,

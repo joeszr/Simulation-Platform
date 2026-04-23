@@ -24,8 +24,8 @@ PathLossUrbanMacroLOS_Highfreq::PathLossUrbanMacroLOS_Highfreq(void) {
 
 // 20171204
 double PathLossUrbanMacroLOS_Highfreq::Db( double _dDisM_3D , double _dUEHeightM){
-    assert( P::s().MacroTX.DAntennaHeightM == 25 );
-    assert( P::s().RX.DAntennaHeightM == 1.5 );
+    //assert( P::s().MacroTX.DAntennaHeightM == 25 );//基站高度
+    //assert( P::s().RX.DAntennaHeightM == 1.5 );//用户高度
 
     double d2DisM = sqrt(pow(_dDisM_3D,2)-pow((P::s().MacroTX.DAntennaHeightM-_dUEHeightM),2));
     double G, C;
@@ -89,6 +89,14 @@ double PathLossUrbanMacroLOS_Highfreq::Db( double _dDisM_3D , double _dUEHeightM
                 + pow((P::s().MacroTX.DAntennaHeightM - _dUEHeightM), 2)); //36.900
         return -1 * (b + 40.0 * std::log10(_dDisM_3D));
     } else {
-        assert(false);
+        //assert(false)
+        // d2DisM < 10m 或 NaN: 钳位到模型最小有效2D距离
+        double heightDiff = P::s().MacroTX.DAntennaHeightM - _dUEHeightM;
+        double d2D_clamped = 10.0;
+        double d3D_clamped = sqrt(d2D_clamped * d2D_clamped
+                                  + heightDiff * heightDiff);
+        double a = 28.0 + 20 * std::log10(
+                P::s().FX.DRadioFrequencyMHz_Macro / 1e3);
+        return -1 * (a + 22.0 * std::log10(d3D_clamped));
     }
 }

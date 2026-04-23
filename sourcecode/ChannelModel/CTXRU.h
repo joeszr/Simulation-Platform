@@ -23,10 +23,7 @@ namespace cm {
         // 所在天线面板的左下点相对于天线局部坐标系(LCS)的相对偏移量, in lamda
         double m_Panel_H_Offset_lamda;
         double m_Panel_V_Offset_lamda;
-        // TXRU的左下阵子相对于天线面板的左下点的相对偏移量, in lamda
-        double m_H_Offset_lamda;
-        double m_V_Offset_lamda;
-        
+
         // 0/90, +45/-45 度极化
         double m_PolarAngle_RAD;   // 极化角度
         
@@ -43,7 +40,10 @@ namespace cm {
         void Build_UE_TXRU(int _type=1);
         void Build_RIS_TXRU();
 
-        
+
+        // TXRU的左下阵子相对于天线面板的左下点的相对偏移量, in lamda
+        double m_H_Offset_lamda;
+        double m_V_Offset_lamda;
     public:
         double Get_LCS_TXRU_LB_H_Offset_lamda_in_Antenna() const;
         
@@ -112,9 +112,9 @@ namespace cm {
         int m_TXRU_Index;
         //chty 1111 b
     private:
-        int m_AntennaPanelIndex;
-        double m_H_Offset_in_Antenna;
-        double m_V_Offset_in_Antenna;
+        int m_AntennaPanelIndex=0;
+        double m_H_Offset_in_Antenna=0.0;
+        double m_V_Offset_in_Antenna=0.0;
     public:
         int GetPanelIndex() const{
             return m_AntennaPanelIndex;

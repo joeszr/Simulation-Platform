@@ -52,6 +52,8 @@ namespace cm {
         SafeUnordered_map<std::pair<int, int>, double> m_Pos2Din;
         SafeUnordered_map<std::pair<int, int>, double> m_Pos2PentratinlossSF;
 
+        void SetPos2PentratinlossSF(bool _iIslowloss, pair<int, int> _pos);
+
     public:
         /// @brief 判断发送者与接收者之间的链路是否存在直射径
         /// @param _tx 发送者引用

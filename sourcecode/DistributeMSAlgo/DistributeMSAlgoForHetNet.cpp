@@ -434,9 +434,9 @@ void DistributeMSAlgoForHetNet::DistributeMSHexagon(MS& _ms) {
                 double  DistLimit = (j < Parameters::Instance().BASIC.IBTSPerBS) ? Parameters::Instance().Macro.LINK.DMinDistanceM : Parameters::Instance().SmallCell.LINK.DMinDistPico2UEM;
                 BTSID btsid = BTSID(i , j);
                 BTS& bts = btsid.GetBTS();
-                double d1 =  x - bts.GetX();
-                double d2 =  y - bts.GetY();
-                double dist = sqrt(d1 * d1 + d2 * d2);
+                cm::Point UEPos(x, y);
+                cm::Point WrapUEPos = cm::WrapAround::Instance().WrapRx(UEPos, bts);
+                double dist = cm::Distance(WrapUEPos, bts);//2060330
                 if (dist < DistLimit) {
                     flag = true;
                     break;

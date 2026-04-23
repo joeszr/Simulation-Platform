@@ -1,6 +1,8 @@
 
 #include "MSRx.h"
 #include "AntennaOrientGain.h"
+#include "AOGOmni.h"
+#include "AOGSector.h"
 #include "P.h"
 #include "../Parameters/Parameters.h"
 
@@ -26,9 +28,8 @@ MSRxNode::~MSRxNode(void) {
 
 
 void MSRxNode::Build_UE_Antenna() {
-    int H_Panel_Num = Parameters::Instance().MSS.IHPanelNum;
-    int V_Panel_Num = Parameters::Instance().MSS.IVPanelNum;
-
+    int H_Panel_Num = Parameters::Instance().MSS.FirstBand.IHPanelNum;
+    int V_Panel_Num = Parameters::Instance().MSS.FirstBand.IVPanelNum;
     int _AntennaPanelNum = H_Panel_Num * V_Panel_Num;
 
     int _EtiltRADNum =
@@ -55,14 +56,13 @@ void MSRxNode::Build_UE_Antenna() {
             int Panel_Index = _H_Panel_Index + _V_Panel_Index * H_Panel_Num;
 
             int H_TXRU_DIV_NUM_PerPanel =
-                    Parameters::Instance().MSS.H_TXRU_DIV_NUM_PerPanel;
+                    Parameters::Instance().MSS.FirstBand.H_TXRU_DIV_NUM_PerPanel;
             int V_TXRU_DIV_NUM_PerPanel =
-                    Parameters::Instance().MSS.V_TXRU_DIV_NUM_PerPanel;
+                    Parameters::Instance().MSS.FirstBand.V_TXRU_DIV_NUM_PerPanel;
             int Polarize_Num =
-                    Parameters::Instance().MSS.Polarize_Num;
+                    Parameters::Instance().MSS.FirstBand.Polarize_Num;
 
-            int _TXRUNum =
-                    H_TXRU_DIV_NUM_PerPanel * V_TXRU_DIV_NUM_PerPanel * Polarize_Num;
+            int _TXRUNum =                    H_TXRU_DIV_NUM_PerPanel * V_TXRU_DIV_NUM_PerPanel * Polarize_Num;
 
 
             std::shared_ptr<AntennaPanel> pAntennaPanel
@@ -80,4 +80,16 @@ void MSRxNode::Build_UE_Antenna() {
             m_pAntenna->GetFirstAntennaPanelPointer()->GetTXRU_Num();
 
     assert(m_pAntenna->SelfCheck());
+    // 初始化 UE 接收端天线方向图（供 RIS→MS 链路的耦合损耗计算使用）
+    m_pRxAOG = std::shared_ptr<cm::AntennaOrientGain>(
+            new cm::AOGSector(
+                    Parameters::Instance().MSS.FirstBand.DH3DBBeamWidthDeg,
+                    Parameters::Instance().MSS.FirstBand.DV3DBBeamWidthDeg,
+                    Parameters::Instance().MSS.FirstBand.DHBackLossDB,
+                    Parameters::Instance().MSS.FirstBand.DVBackLossDB,
+                    Parameters::Instance().MSS.FirstBand.DHBackLossDB,
+                    0.0));  // UE 无机械下倾
+
+    // UE 天线增益
+    m_dRxAntGainDB = Parameters::Instance().MSS.FirstBand.DAntennaGainDb;
 }

@@ -51,6 +51,10 @@ void CTXRU::Build_RIS_TXRU() {
     } else {
         assert(false);
     }
+    m_AntennaPanelIndex = m_pFatherAntennaPanel->GetPanelIndex();
+    m_H_Offset_in_Antenna = m_H_Offset_lamda + m_pFatherAntennaPanel->Get_LCS_Panel_LB_H_Offset_lamda_in_Antenna();
+    m_V_Offset_in_Antenna = m_V_Offset_lamda + m_pFatherAntennaPanel->Get_LCS_Panel_LB_V_Offset_lamda_in_Antenna();
+
 }
 
 void CTXRU::Build_BS_TXRU() {

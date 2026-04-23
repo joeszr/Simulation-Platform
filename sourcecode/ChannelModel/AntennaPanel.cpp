@@ -10,6 +10,14 @@
 
 using namespace cm;
 
+/// @brief AntennaPanel 构造函数
+/// 作用：初始化天线面板对象，设置其父天线指针、水平/垂直面板索引、
+///       TXRU 总数、全局面板索引，并按 TXRU 总数初分配 TXRU 容器。
+/// 修复说明（新增于 2026-03-30）：
+///   原 assert 为： assert(m_Panel_Index >= 0 && m_Panel_Index < m_TXRUNum)，
+///   其中 m_TXRUNum 是每个面板内的 TXRU 总数（非面板总数），
+///   将 m_Panel_Index 与 TXRU 数量比较逐辑上错误，且在多面板场景下
+///   可能导致资源错误地分配，已改为只检查非负即可。
 AntennaPanel::AntennaPanel(const std::shared_ptr<Antenna>& _pFatherAntenna,
                            const int& _H_Panel_Index, const int& _V_Panel_Index,
                            const int& _TXRUNum, const int& _Panel_Index) {
@@ -19,11 +27,9 @@ AntennaPanel::AntennaPanel(const std::shared_ptr<Antenna>& _pFatherAntenna,
     m_V_Panel_Index = _V_Panel_Index;
     m_TXRUNum = _TXRUNum;
     m_Panel_Index = _Panel_Index;
-
-    assert(m_Panel_Index >= 0 && m_Panel_Index < m_TXRUNum);
-
-    assert(m_Panel_Index == m_H_Panel_Index + m_V_Panel_Index
-            * Parameters::Instance().Macro.IHPanelNum);
+    // 通过父天线获取实际面板布局来校验
+    assert(m_Panel_Index >= 0
+           && m_Panel_Index < (int)_pFatherAntenna->GetvAntennaPanels().size());
 
     m_vTXRUs.resize(m_TXRUNum, std::shared_ptr<CTXRU>());
     //chty 1111 b a

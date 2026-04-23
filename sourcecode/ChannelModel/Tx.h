@@ -12,6 +12,7 @@ namespace cm {
 
     class Tx : public Point {
     public:
+        Point* m_pPoint;
         int m_iTxID;
         double m_dTxHeight;
         double m_dTxOrientRAD;

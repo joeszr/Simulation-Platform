@@ -18,6 +18,7 @@ namespace cm{
     class Rx : public Point{
     public:
         Random random;
+        Point* m_pPoint;
         ///RX的ID
         int m_iRxID;
         ///0---Outdoor,1---Indoor,2---Incar

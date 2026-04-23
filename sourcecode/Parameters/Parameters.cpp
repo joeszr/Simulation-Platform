@@ -227,7 +227,7 @@ void Parameters::Set_LowFreq_InH() {
 
             Macro.DVBackLossDB = -25;
             Macro.DHBackLossDB = -25;
-            Macro.LINK.DMinDistanceM = 0; //原1.5;
+            Macro.LINK.DMinDistanceM = 1.5; //原1.5;
             Macro.LINK.DRadioFrequencyMHz = 4000;
             Macro.DL.bEnable_BSAnalogBF = false;
 
@@ -561,7 +561,7 @@ void Parameters::Set_HighFreq_InH() {
         Macro.IHPanelNum = 2; //1;
         Macro.DHBackLossDB = -25;
         Macro.DVBackLossDB = -25;
-        Macro.LINK.DMinDistanceM = 0; //原1.5;
+        Macro.LINK.DMinDistanceM = 1.5; //原1.5;
         Macro.LINK.DRadioFrequencyMHz = 30000;
         Macro.DL.bEnable_BSAnalogBF = true;
     }
@@ -1220,7 +1220,52 @@ void Parameters::Build_DL() {
     m_Str2ParaMap_DL["SIM.UL.IHARQProcessNum"] = &(SIM.UL.IHARQProcessNum);
     m_Str2ParaMap_DL["MIMO_CTRL.IMaxLayerNum_BS"] = &(MIMO_CTRL.IMaxLayerNum_BS);
     m_Str2ParaMap_DL["MIMO_CTRL.PMI_based_Precoding"] = &(MIMO_CTRL.PMI_based_Precoding);
-    
+
+    //RIS
+    m_Str2ParaMap_DL["RIS.LINK.DRadioFrequencyMHz"] = &(RIS.LINK.DRadioFrequencyMHz);
+    m_Str2ParaMap_DL["RIS.IAntennaPatternMode"] = &(RIS.IAntennaPatternMode);
+    m_Str2ParaMap_DL["RIS.DV3DBBeamWidthDeg"] = &(RIS.DV3DBBeamWidthDeg);
+    m_Str2ParaMap_DL["RIS.DH3DBBeamWidthDeg"] = &(RIS.DH3DBBeamWidthDeg);
+    m_Str2ParaMap_DL["RIS.DAntennaGainDb"] = &(RIS.DAntennaGainDb);
+    m_Str2ParaMap_DL["RIS.DAntennaHeightM"] = &(RIS.DAntennaHeightM);
+    m_Str2ParaMap_DL["RIS.DMechanicalTiltDeg"] = &(RIS.DMechanicalTiltDeg);
+    m_Str2ParaMap_DL["RIS.DElectricalTiltDeg"] = &(RIS.DElectricalTiltDeg);
+    m_Str2ParaMap_DL["RIS.DVAntSpace"] = &(RIS.DVAntSpace);
+    m_Str2ParaMap_DL["RIS.DHAntSpace"] = &(RIS.DHAntSpace);
+    m_Str2ParaMap_DL["RIS.UL.DNoiseFigureDb"] = &(RIS.UL.DNoiseFigureDb);
+    m_Str2ParaMap_DL["RIS.IVAntNumPerPanel"] = &(RIS.IVAntNumPerPanel);
+    m_Str2ParaMap_DL["RIS.IHAntNumPerPanel"] = &(RIS.IHAntNumPerPanel);
+    m_Str2ParaMap_DL["RIS.IVPanelNum"] = &(RIS.IVPanelNum);
+    m_Str2ParaMap_DL["RIS.IHPanelNum"] = &(RIS.IHPanelNum);
+    m_Str2ParaMap_DL["RIS.Polarize_Num"] = &(RIS.Polarize_Num);
+    m_Str2ParaMap_DL["RIS.V_TXRU_DIV_NUM_PerPanel"] = &(RIS.V_TXRU_DIV_NUM_PerPanel);
+    m_Str2ParaMap_DL["RIS.H_TXRU_DIV_NUM_PerPanel"] = &(RIS.H_TXRU_DIV_NUM_PerPanel);
+    m_Str2ParaMap_DL["RIS.ANALOGBEAM_CONFIG.iHRISBeamNum"] = &(RIS.ANALOGBEAM_CONFIG.iHRISBeamNum);
+    m_Str2ParaMap_DL["RIS.ANALOGBEAM_CONFIG.iVRISBeamNum"] = &(RIS.ANALOGBEAM_CONFIG.iVRISBeamNum);
+    m_Str2ParaMap_DL["RIS.ANALOGBEAM_CONFIG.dStartHRISBeamDeg"] = &(RIS.ANALOGBEAM_CONFIG.dStartHRISBeamDeg);
+    m_Str2ParaMap_DL["RIS.ANALOGBEAM_CONFIG.dStartVRISBeamDeg"] = &(RIS.ANALOGBEAM_CONFIG.dStartVRISBeamDeg);
+    m_Str2ParaMap_DL["RIS.ANALOGBEAM_CONFIG.dSpaceHRISBeamDeg"] = &(RIS.ANALOGBEAM_CONFIG.dSpaceHRISBeamDeg);
+    m_Str2ParaMap_DL["RIS.ANALOGBEAM_CONFIG.dSpaceVRISBeamDeg"] = &(RIS.ANALOGBEAM_CONFIG.dSpaceVRISBeamDeg);
+    m_Str2ParaMap_DL["RIS.DHBackLossDB"] = &(RIS.DHBackLossDB);
+    m_Str2ParaMap_DL["RIS.DVBackLossDB"] = &(RIS.DVBackLossDB);
+    m_Str2ParaMap_DL["RIS.LINK.DMinDistanceM"] = &(RIS.LINK.DMinDistanceM);
+    m_Str2ParaMap_DL["RIS.DL.bEnable_BSAnalogBF"] = &(RIS.DL.bEnable_BSAnalogBF);
+    m_Str2ParaMap_DL["RIS.IS_SmallScale"] = &(RIS.IS_SmallScale);
+    m_Str2ParaMap_DL["RIS.dMMSE_RIS"] = &(RIS.dMMSE_RIS);
+    m_Str2ParaMap_DL["RIS.is_BestBTS2MSBeam"] = &(RIS.is_BestBTS2MSBeam);
+    m_Str2ParaMap_DL["RIS.is_DoubleBest"] = &(RIS.is_DoubleBest);
+    m_Str2ParaMap_DL["RIS.is_BestBeam"] = &(RIS.is_BestBeam);
+    m_Str2ParaMap_DL["RIS.is_BestCase"] = &(RIS.is_BestCase);
+    m_Str2ParaMap_DL["RIS.is_Max_UE_RIS"] = &(RIS.is_Max_UE_RIS);
+    m_Str2ParaMap_DL["RIS.is_BestMiddle"] = &(RIS.is_BestMiddle);
+    m_Str2ParaMap_DL["RIS.is_New"] = &(RIS.is_New);
+    m_Str2ParaMap_DL["RIS.is_baseline"] = &(RIS.is_baseline);
+    m_Str2ParaMap_DL["RIS.com_case"] = &(RIS.com_case);
+    m_Str2ParaMap_DL["RIS._case"]=&(RIS._case);
+    m_Str2ParaMap_DL["RIS.DistributeHexagon_Min_Radiu"] = &(RIS.DistributeHexagon_Min_Radiu);
+    m_Str2ParaMap_DL["RIS.DistributeHexagon_Max_Radiu"] = &(RIS.DistributeHexagon_Max_Radiu);
+
+
     //chty add
     m_Str2ParaMap_DL["BASIC.ifcoexist"] = &(BASIC.ifcoexist);
     m_Str2ParaMap_DL["BASIC.type1MSRate"] = &(BASIC.type1MSRate);
@@ -1738,6 +1783,14 @@ void Parameters::CalculateDerivedParameters_DL() {
     for (int j = 0; j < Macro.ANALOGBEAM_CONFIG.iHUEBeamNum; j++) {
         double dUEescanRAD = cm::DEG2RAD(Macro.ANALOGBEAM_CONFIG.dStartHUEBeamDeg + j * Macro.ANALOGBEAM_CONFIG.dSpaceHUEBeamDeg);
         Macro.ANALOGBEAM_CONFIG.vUEescanRAD.push_back(dUEescanRAD);
+    }
+    for (int i = 0; i < RIS.ANALOGBEAM_CONFIG.iVRISBeamNum; i++) {
+        double dRISetiltRAD = cm::DEG2RAD(RIS.ANALOGBEAM_CONFIG.dStartVRISBeamDeg + i * RIS.ANALOGBEAM_CONFIG.dSpaceVRISBeamDeg);
+        RIS.ANALOGBEAM_CONFIG.vRISetiltRAD.push_back(dRISetiltRAD);
+    }
+    for (int j = 0; j < RIS.ANALOGBEAM_CONFIG.iHRISBeamNum; j++) {
+        double dRISescanRAD = cm::DEG2RAD(RIS.ANALOGBEAM_CONFIG.dStartHRISBeamDeg + j * RIS.ANALOGBEAM_CONFIG.dSpaceHRISBeamDeg);
+        RIS.ANALOGBEAM_CONFIG.vRISescanRAD.push_back(dRISescanRAD);
     }
 
     XR.iDelayBudget_slot = XR.dDelayBuget_ms / BASIC.DSlotDuration_ms;

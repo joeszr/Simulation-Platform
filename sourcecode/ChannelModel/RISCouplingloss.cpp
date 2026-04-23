@@ -28,6 +28,12 @@ double RISCouplingloss::InitializeRIS_CouplingLoss_linear_beamscannning(BTS& bts
            int risid = id.GetTotalIndex();
            RISRxID risrxid = std::make_pair(risid, rxid);
            TxRISID txrisid = std::make_pair(bts.GetTxID(), risid);
+           //防御性检查
+        if (lm.m_TxRIS2CS.find(txrisid) == lm.m_TxRIS2CS.end()) {
+            cerr << "[RISCouplingloss] TX=" << bts.GetTxID()
+                 << " RIS=" << risid << " not found in m_TxRIS2CS, skipping." << endl;
+            continue;
+        }
            std::shared_ptr<AntennaPanel> _pAntennaPanel = ris.GetAntennaPointer()->GetFirstAntennaPanelPointer();
            std::shared_ptr<AntennaPanel> _txAntennaPanel= tx.GetAntennaPointer()->GetFirstAntennaPanelPointer();
            std::shared_ptr<cm::CTXRU> pTx_TXRU = _txAntennaPanel->GetFirstTXRU();

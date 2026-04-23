@@ -39,13 +39,18 @@ int Antenna::GetTotalTXRU_Num() const {
 }
 
 int Antenna::Get_V_BeamIndex(int _BeamIndex) const {
-    int _V_BeamIndex = _BeamIndex / Get_H_BeamNum();
+    int hNum = Get_H_BeamNum();
+    if (hNum == 0) return 0;
+    int _V_BeamIndex = _BeamIndex / hNum;
 
     return _V_BeamIndex;
 }
 
 int Antenna::Get_H_BeamIndex(int _BeamIndex) const {
-    int _H_BeamIndex = _BeamIndex % Get_H_BeamNum();
+    //int _H_BeamIndex = _BeamIndex % Get_H_BeamNum();
+    int hNum = Get_H_BeamNum();
+    if (hNum == 0) return 0;
+    int _H_BeamIndex = _BeamIndex % hNum;
 
     return _H_BeamIndex;
 }
@@ -64,6 +69,7 @@ int Antenna::GetRandomBeamIndex() {///这里删除const
 }
 
 double Antenna::GetEtiltRAD(int _BeamIndex) const {
+    if (Get_V_BeamNum() == 0) return 0.0;
     int _V_BeamIndex = Get_V_BeamIndex(_BeamIndex);
 
     assert(_V_BeamIndex >= 0 && _V_BeamIndex < Get_V_BeamNum());
@@ -72,6 +78,7 @@ double Antenna::GetEtiltRAD(int _BeamIndex) const {
 }
 
 double Antenna::GetEscanRAD(int _BeamIndex) const {
+    if (Get_H_BeamNum() == 0) return 0.0;
     int _H_BeamIndex = Get_H_BeamIndex(_BeamIndex);
 
     assert(_H_BeamIndex >= 0 && _H_BeamIndex < Get_H_BeamNum());

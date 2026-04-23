@@ -16,13 +16,13 @@
 & RIS.DHAntSpace				    0.5
 & RIS.UL.DNoiseFigureDb				5
 
-& RIS.IVAntNumPerPanel				32
-& RIS.IHAntNumPerPanel				32
+& RIS.IVAntNumPerPanel				1
+& RIS.IHAntNumPerPanel				1
 & RIS.IVPanelNum				1
 & RIS.IHPanelNum				1
 & RIS.Polarize_Num				1
-& RIS.V_TXRU_DIV_NUM_PerPanel			32
-& RIS.H_TXRU_DIV_NUM_PerPanel			32
+& RIS.V_TXRU_DIV_NUM_PerPanel			1
+& RIS.H_TXRU_DIV_NUM_PerPanel			1
 
 & RIS.ANALOGBEAM_CONFIG.iHRISBeamNum		15
 & RIS.ANALOGBEAM_CONFIG.iVRISBeamNum		4

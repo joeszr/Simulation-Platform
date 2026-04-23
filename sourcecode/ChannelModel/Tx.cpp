@@ -35,6 +35,7 @@ Tx::Tx(Point& _point) {
     m_iTxID = txcounter++;
     m_mTxID2PTx[m_iTxID] = this;
     m_dTxHeight = 0;
+    m_pPoint = &_point;
     Build_BS_Antenna();
     assert(m_pAntenna != nullptr);
 }

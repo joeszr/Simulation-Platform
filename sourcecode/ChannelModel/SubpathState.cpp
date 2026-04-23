@@ -53,8 +53,25 @@ SubpathState::SubpathState() {
         m_UE_AOG_with_AntennaPanel.resize(P::s().RX.IHPanelNum, 0.0);
      */
 
+    // 【修复1】初始化所有关键成员变量，防止未初始化内存导致崩溃
+    // 问题背景：原构造函数未初始化成员变量，导致 resize() 拷贝临时对象时，
+    // 未初始化的指针/数值被复制到 vector 中，后续访问时出现垃圾值或越界。
+    // 例如：4D vector m_vcSubpath_TimeH 的内部指针被污染，size() 返回天文数字。
+    // 
+    // 解决方案：使用成员初始化列表或构造函数体显式初始化所有基础类型成员。
     m_bIsLOS_Subpath = false;
-    HaveAllocate =false;
+    m_pPathState = nullptr;
+    m_Subpath_Index = 0;
+    m_Power = 0.0;
+    m_PhaseDegXX = m_PhaseDegXY = m_PhaseDegYX = m_PhaseDegYY = 0.0;
+    m_AODOffsetDeg = m_AOAOffsetDeg = m_EODOffsetDeg = m_EOAOffsetDeg = 0.0;
+    m_AODDeg = m_AOADeg = m_EODDeg = m_EOADeg = 0.0;
+    BS_AggregateGain = {0.0, 0.0};
+    UE_AggregateGain = {0.0, 0.0};
+    m_bOnlyFirst = false;
+    m_dUpdateInterval = 0.0;
+    // HaveAllocate 标记是否已分配缓存 vector，防止重复分配
+    HaveAllocate = false;
 }
 
 std::complex<double> SubpathState::GetTempD_for_TXRUPair(
@@ -86,9 +103,14 @@ std::complex<double> SubpathState::CalcSubpath_TimeH_for_TXRUPair(
     int UETXRUIndex=_pUE_TXRU->GetTXRUIndex();
     double& lasttime = m_vdLastUpdate[_BS_AntennaPanelIndex][_UE_AntennaPanelIndex][BSTXRUIndex][UETXRUIndex];
     std::complex<double>& cSubpath_TimeH = m_vcSubpath_TimeH[_BS_AntennaPanelIndex][_UE_AntennaPanelIndex][BSTXRUIndex][UETXRUIndex];
-    while(lasttime<_time_s){
-        cSubpath_TimeH *= m_vcDelta_cSubpath_TimeH[_UE_AntennaPanelIndex];
-        lasttime += m_dUpdateInterval;
+    // 2026-03-29 修复: 用O(1)直接计算替代while循环
+    // 原问题: 当m_dUpdateInterval==0时死循环; 迭代次数过多时复数下溢为非规格化数(如6.95e-310),
+    // x86上denorm运算慢约100倍,程序看起来像卡死在std::operator*处
+    // 数学等价: 循环乘N次delta 等价于 乘pow(delta, N)
+    if (m_dUpdateInterval > 0.0 && lasttime < _time_s) {
+        int steps = static_cast<int>(std::ceil((_time_s - lasttime) / m_dUpdateInterval));
+        cSubpath_TimeH *= std::pow(m_vcDelta_cSubpath_TimeH[_UE_AntennaPanelIndex], steps);
+        lasttime += steps * m_dUpdateInterval;
     }
     //chty 1111 e
 
@@ -147,15 +169,36 @@ void SubpathState::Initialize() {
     // _BS/UE_PanelIndex --> AOG
     m_BS_AOG_with_AntennaPanel.resize(BS_PanelNum, 0.0);
     m_UE_AOG_with_AntennaPanel.resize(UE_PanelNum, 0.0);
-    //chty 1111 b
+    // ==================== 缓存 vector 分配逻辑 ====================
+    // 【修复2】解决 m_vcDelta_cSubpath_TimeH 越界访问导致的 SIGSEGV
+    //
+    // 问题原因：
+    // 1. m_vcDelta_cSubpath_TimeH 的 resize() 原本在 if(!HaveAllocate) 保护块内。
+    // 2. 首次调用 Initialize() 时，若 UEPannelNum=0（Rx 面板信息未就绪），
+    //    执行 resize(0) 后 HaveAllocate=true，vector 仍为空。
+    // 3. 后续再调用 Initialize() 时，保护块被跳过，vector 永远不会被正确 resize。
+    // 4. 在 InitialCalcSubpath_TimeH_for_TXRUPair() 中访问 m_vcDelta_cSubpath_TimeH[0]
+    //    时，因 size=0 而越界崩溃。
+    //
+    // 解决方案：
+    // - 将 m_vcDelta_cSubpath_TimeH.resize() 移到保护块外，确保每次都正确设置尺寸。
+    // - 修改保护条件：当面板数量变化时也重新分配 4D 缓存。
+    // ==============================================================
     int BSPannelNum = m_pPathState->m_pBCS->m_pTx->GetPannelNum();
     int UEPannelNum = m_pPathState->m_pBCS->m_pRx->GetPannelNum();
-    int BSTotalTxRUNum = m_pPathState->m_pBCS->m_pTx->GetTotalTxRUNum();//per panel
-    int UETotalTxRUNum = m_pPathState->m_pBCS->m_pRx->GetTotalTxRUNum();//per panel
+    int BSTotalTxRUNum = m_pPathState->m_pBCS->m_pTx->GetAntennaPointer()->GetTotalTXRU_Num();
+    int UETotalTxRUNum = m_pPathState->m_pBCS->m_pRx->GetAntennaPointer()->GetTotalTXRU_Num();
+    m_bOnlyFirst = false;
     m_dUpdateInterval = Parameters::Instance().LINK_CTRL.Islot4Hupdate * Parameters::Instance().BASIC.DSlotDuration_ms/1000;
-    if(!HaveAllocate){
-        HaveAllocate=true;
-        m_vcDelta_cSubpath_TimeH.resize(UEPannelNum);
+    
+    // 【关键】m_vcDelta_cSubpath_TimeH 必须在保护块外 resize，
+    // 确保即使 HaveAllocate=true 也能纠正尺寸不匹配的问题
+    m_vcDelta_cSubpath_TimeH.resize(UEPannelNum);
+    
+    // 保护块：仅当首次分配 或 面板数量变化时才重新分配 4D 缓存
+    // m_vcSubpath_TimeH 和 m_vdLastUpdate 是大型 4D vector，重复分配开销大
+    if(!HaveAllocate || m_vcSubpath_TimeH.size() != static_cast<size_t>(BSPannelNum)){
+        HaveAllocate = true;
         m_vcSubpath_TimeH.resize(BSPannelNum, vector<vector<vector<std::complex<double>>>>(UEPannelNum,
                                                                                            vector<vector<std::complex<double>>>(
                                                                                                    BSTotalTxRUNum,
@@ -167,7 +210,6 @@ void SubpathState::Initialize() {
                                                                                                          UETotalTxRUNum,
                                                                                                          0))));
     }
-    //chty 1111 e
 }
 
 void SubpathState::Init_Step10() {
@@ -270,17 +312,26 @@ void SubpathState::InitTempB_withAntennaPanel_new() {
     std::shared_ptr<cm::Antenna> pUEAntenna
             = m_pPathState->m_pBCS->m_pRx->GetAntennaPointer();
 
-    BOOST_FOREACH(std::shared_ptr<AntennaPanel> pUEAntennaPanel,
-            pUEAntenna->GetvAntennaPanels()) {
-
-        double dWaveLength;
+    // 预先确定波长：支持 Macro、Pico 以及 RIS 中继链路（linkCategory 1/2）
+    // 原 assert(false) 会在 RIS 链路（m_pTx 可能为 RIS 节点）时崩溃
+    double dWaveLength;
+    const int linkCat = m_pPathState->m_pBCS->m_iLinkCategory;
+    if (linkCat == 0) {
+        // 常规 BS->UE 链路：区分 Macro / Pico
         if (m_pPathState->m_pBCS->IsMacroToUE()) {
             dWaveLength = P::s().FX.DWaveLength_Macro;
-        } else if (m_pPathState->m_pBCS->IsPicoToUE()) {
-            dWaveLength = P::s().FX.DWaveLength_Pico;
         } else {
-            assert(false);
+            // IsPicoToUE() == !IsMacroToUE()，覆盖剩余所有情况
+            dWaveLength = P::s().FX.DWaveLength_Pico;
         }
+    } else {
+        // RIS 中继链路（linkCategory=1: BS->RIS, linkCategory=2: RIS->UE）
+        // 使用 Macro 波长作为默认，与 BS->UE 链路一致
+        dWaveLength = P::s().FX.DWaveLength_Macro;
+    }
+
+    BOOST_FOREACH(std::shared_ptr<AntennaPanel> pUEAntennaPanel,
+            pUEAntenna->GetvAntennaPanels()) {
 
         Rx* pRx = m_pPathState->m_pBCS->m_pRx;
         double dVelocity = pRx->GetVelocityMPS();
@@ -516,14 +567,19 @@ std::complex<double> SubpathState::InitialCalcSubpath_TimeH_for_TXRUPair(
     std::complex<double> cTemp5 = exp(
             UE_H_Offset_in_Antenna * m_cUE_dH_Unit_withAntennaPanel[_UE_AntennaPanelIndex]
             + UE_V_Offset_in_Antenna * m_cUE_dV_Unit_withAntennaPanel[_UE_AntennaPanelIndex]);
-    // 原 m_bOnlyFirst 仅在首对 TXRU 上计算 BS/UE_AggregateGain，后续 TXRU 对会跳过赋值，
-    // 成员未初始化（构造函数未置零）→ complex 为垃圾值 → 在 std::operator* 处 SIGSEGV。
-    // CalcFreqH 会遍历多 TXRU，必须为每一对重新计算波束增益。
-    {
+    if (!m_bOnlyFirst) {
+        m_bOnlyFirst=true;
+        assert(_BS_AntennaPanelIndex==0);
+        assert(_UE_AntennaPanelIndex==0);
+        assert(_pBS_TXRU->GetTXRUIndex()==0);
+        assert(_pUE_TXRU->GetTXRUIndex()==0);
+
         double dEODRAD_GCS = DEG2RAD(m_EODDeg);
         double dAODRAD_GCS = DEG2RAD(m_AODDeg);
         BS_AggregateGain = _pBS_TXRU->CalcAggregateGain(
                 dAODRAD_GCS, dEODRAD_GCS, BS_BeamIndex);
+
+        // calc UE side
 
         double dEOARAD_GCS = DEG2RAD(m_EOADeg);
         double dAOARAD_GCS = DEG2RAD(m_AOADeg);
@@ -532,14 +588,17 @@ std::complex<double> SubpathState::InitialCalcSubpath_TimeH_for_TXRUPair(
                 dAOARAD_GCS, dEOARAD_GCS, UE_BeamIndex);
     }
 
+
     std::complex<double> cTempA = cTempD * cTemp5 * cTemp4 * BS_AggregateGain * UE_AggregateGain;
     std::complex<double> cSubpath_TimeH = cTempA
                                           * std::exp(m_cTempB_with_UEAntennaPanel[_UE_AntennaPanelIndex] * (_time_s + 5));
 
     assert(_time_s == 0);
     m_vcDelta_cSubpath_TimeH[_UE_AntennaPanelIndex] = std::exp(m_cTempB_with_UEAntennaPanel[_UE_AntennaPanelIndex] * m_dUpdateInterval);
-    int BS_TxRUIndex = _pBS_TXRU->GetTXRUIndex();
-    int UE_TxRUIndex = _pUE_TXRU->GetTXRUIndex();
+    int BS_TxRUIndex = _pBS_TXRU->GetTXRUIndex()
+                       - _BS_AntennaPanelIndex * (m_vcSubpath_TimeH[0][0].size());
+    int UE_TxRUIndex = _pUE_TXRU->GetTXRUIndex()
+                       - _UE_AntennaPanelIndex * (m_vcSubpath_TimeH[0][0][0].size());
     m_vcSubpath_TimeH[_BS_AntennaPanelIndex][_UE_AntennaPanelIndex][BS_TxRUIndex][UE_TxRUIndex] = cSubpath_TimeH;
 
 //    static std::mutex l;

@@ -2,6 +2,7 @@
 ///@brief  BasicChannelState类定义
 ///@author wangfei
 
+#include <malloc.h>
 #include "P.h"
 #include "LinkMatrix.h"
 #include "Tx.h"
@@ -17,6 +18,14 @@
 #include "../Utility/Include.h"
 #include "../Statistician/Observer.h"
 #include "Antenna.h"
+#include "BS2RISPathLossUrbanMacroOutdoorLOS.h"
+#include "BS2RISPathLossUrbanMacroOutdoorNLOS.h"
+#include "BS2RISPathLossUrbanMicroLOS_Highfreq.h"
+#include "RIS2MSPathLossUrbanMicroLOS_Highfreq.h"
+#include "BS2RISPathLossUrbanMicroNLOS_Highfreq.h"
+#include "RIS2MSPathLossUrbanMacroOutdoorLOS.h"
+#include "RIS2MSPathLossUrbanMacroOutdoorNLOS.h"
+#include "../Scenario/Scenario.h"
 
 using namespace cm;
 size_t cm::POSHash(const POS& pos){
@@ -71,7 +80,21 @@ std::shared_ptr<GaussianMap> BasicChannelState::m_pSFMapPicoToUEO2I;
 SafeUnordered_map<KEY, bool> BasicChannelState::m_LOSORNLOS = SafeUnordered_map<KEY, bool>(100, KEYHash);
 ///构造函数
 
+/// @brief BasicChannelState 默认构造函数
+/// 作用：初始化基础信道状态对象的各成员变量，确保对象在调用 Initialize() 之前
+///       处于安全的已知状态，避免使用未初始化的垃圾值导致崩溃。
+/// 修复说明（新增于 2026-03-30）：
+///   原始代码中 m_pTx 和 m_pRx 为裸指针，构造时未初始化为 nullptr。
+///   LinkMatrix 在赋值 ChannelState 时会先默认构造再调用 Initialize()，
+///   若中间某处提前访问了 m_pRx（如通过指针链访问 CTXRU::m_AntennaPanelIndex），
+///   会读到垃圾地址（调试中观测到 pRx=0x33），进而导致 SubpathState 中
+///   以垃圾值 1438662256 作为 vector 索引，触发越界 SIGSEGV。
+///   将两个指针显式初始化为 nullptr 可从根源消除此类未定义行为。
 BasicChannelState::BasicChannelState() {
+    // 新增于 2026-03-30：显式置 nullptr，防止默认构造后指针为垃圾值
+    m_pTx = nullptr;
+    m_pRx = nullptr;
+    m_iLinkCategory = 0;
     m_dTxAntennaPatternDB = 0;
     m_d3DDistanceM = 0;
     /*
@@ -260,13 +283,13 @@ void BasicChannelState::Initialize(cm::Tx& _tx, cm::Rx& _rx) {
     double dFrequencyGHz = P::s().FX.DRadioFrequencyMHz_Macro * 1e-3;
     Point tx_wrap;
 
-    tx_wrap = WrapAround::Instance().WrapTx(_rx, _tx);
-
-    m_d2DDistanceM = Distance(_rx, tx_wrap);
+    tx_wrap = WrapAround::Instance().WrapTx(_rx, _tx);//将发射机进行一个镜像映射
+///这里可能有问题
+    m_d2DDistanceM = Distance(_rx, tx_wrap);//“_tx"使用的是非镜像值
     double dTxHeight = _tx.GetTxHeightM();
     double dRxHeight = _rx.GetRxHeightM();
     m_d3DDistanceM = sqrt(pow(m_d2DDistanceM, 2.0) + pow(abs(dTxHeight - dRxHeight), 2.0));
-    m_dUE2BSTiltRAD = std::atan((dTxHeight - dRxHeight) / m_d2DDistanceM); //以垂直于Z轴为0度，向上为负角度，向下为正角度
+    m_dUE2BSTiltRAD = std::atan2(dTxHeight - dRxHeight, m_d2DDistanceM); //以垂直于Z轴为0度，向上为负角度，向下为正角度
     lm.SetPos2Din(_tx, _rx); //针对5GCM_Uma||ITU_UMA 室内用户
 
     if (IsUMAOrRMAOrUMI_Indoor_UE(_rx)) {
@@ -699,6 +722,9 @@ void BasicChannelState::Initialize(cm::Tx& _tx, cm::Rx& _rx) {
                 break;
         }
     }
+    if (m_iLinkCategory == 1 || m_iLinkCategory == 2) {
+        CalculateAlpha_for_CouplingLoss_Linear_RIS(_tx, _rx, m_iLinkCategory);
+    }
 }
 
 bool BasicChannelState::IsMacroToUE() const{
@@ -873,9 +899,511 @@ void BasicChannelState::SetLinkCategory_as_RIS2MS(){
     m_iLinkCategory = 2;
 }
 
+complex<double> BasicChannelState::CalAlpha_for_CouplingLoss_of_Beampair_RIS(
+        int _iLinkCategory,
+        Tx& _tx, Rx& _rx,
+        int Tx_BeamIndex, int Rx_BeamIndex,
+        std::shared_ptr<CTXRU> pTx_TXRU,
+        std::shared_ptr<CTXRU> pRx_TXRU){
+
+    complex<double> Alpha_for_CouplingLoss_RIS = 0;
+
+    double dEODRAD_GCS = m_EODLOSRAD;
+    double dAODRAD_GCS = m_AODLOSRAD;
 
 
-void BasicChannelState::InitializeMap() {
+
+    complex<double> cTxAggregateGain = pTx_TXRU->CalcAggregateGain(
+            dAODRAD_GCS, dEODRAD_GCS, Tx_BeamIndex);
+
+
+    double dEOARAD_GCS = m_EOALOSRAD;
+    double dAOARAD_GCS = m_AOALOSRAD;
+
+    complex<double> cRxAggregateGain = pRx_TXRU->CalcAggregateGain(
+            dAOARAD_GCS, dEOARAD_GCS, Rx_BeamIndex);
+
+    std::complex<double> TempD_RIS
+            = CalTempD_RIS_for_TXRUPair(_iLinkCategory,_tx, _rx,pTx_TXRU, pRx_TXRU);
+
+
+    Alpha_for_CouplingLoss_RIS = TempD_RIS * cTxAggregateGain * cRxAggregateGain;
+    return Alpha_for_CouplingLoss_RIS;
+
+}
+
+complex<double> BasicChannelState::CalAlpha_for_CouplingLoss_of_Beampair_RIS_Test(
+        int _iLinkCategory,
+        Tx& _tx, Rx& _rx,
+        int Tx_BeamIndex, int Rx_BeamIndex,
+        std::shared_ptr<CTXRU> pTx_TXRU,
+        std::shared_ptr<CTXRU> pRx_TXRU){
+
+    complex<double> Alpha_for_CouplingLoss_RIS = 0;
+
+
+    double dEODRAD_GCS = TXRU2EOD[std::make_pair(pTx_TXRU->GetTXRUIndex(),pRx_TXRU->GetTXRUIndex())];
+    double dAODRAD_GCS = TXRU2AOD[std::make_pair(pTx_TXRU->GetTXRUIndex(),pRx_TXRU->GetTXRUIndex())];
+    complex<double> cTxAggregateGain = pTx_TXRU->CalcAggregateGain(
+            dAODRAD_GCS, dEODRAD_GCS, Tx_BeamIndex);
+    double dEOARAD_GCS = TXRU2EOA[std::make_pair(pTx_TXRU->GetTXRUIndex(),pRx_TXRU->GetTXRUIndex())];
+    double dAOARAD_GCS = TXRU2AOA[std::make_pair(pTx_TXRU->GetTXRUIndex(),pRx_TXRU->GetTXRUIndex())];
+    complex<double> cRxAggregateGain = pRx_TXRU->CalcAggregateGain(
+            dAOARAD_GCS, dEOARAD_GCS, Rx_BeamIndex);
+    std::complex<double> TempD_RIS
+            = CalTempD_RIS_for_TXRUPair(_iLinkCategory,_tx, _rx,pTx_TXRU, pRx_TXRU);
+
+
+    Alpha_for_CouplingLoss_RIS = TempD_RIS * cTxAggregateGain * cRxAggregateGain;
+    return Alpha_for_CouplingLoss_RIS;
+
+
+
+
+}
+
+std::complex<double> BasicChannelState::CalTempD_RIS_for_TXRUPair(
+        int _iLinkCategory,
+        Tx& _tx, Rx& _rx,
+        std::shared_ptr<CTXRU> pTx_TXRU,
+        std::shared_ptr<CTXRU> pRx_TXRU) {
+
+
+    itpp::cmat temp3 = itpp::zeros_c(2, 2);
+    temp3(0, 0) = 1.0;
+    temp3(1, 1) = -1.0;
+    temp3(0, 1) = 0.0;
+    temp3(1, 0) = 0.0;
+
+    itpp::cmat temp2 = itpp::zeros_c(2, 1);
+    std::shared_ptr<AntennaPanel> pTxAntennaPanel = pTx_TXRU->GetFatherAntennaPanelPointer();
+    double Tx_PhiRAD = GetPhiRAD_GCS(
+            m_AODLOSRAD,
+            m_EODLOSRAD,
+            pTxAntennaPanel->GetTxRxOrientRAD(),
+            pTxAntennaPanel->GetMechanicalTiltRAD(),
+            0);
+    double Tx_AOG = DB2L(_tx.GetTxAOGDB(
+            ALoSRAD_GCS2LCS(
+                    m_AODLOSRAD,
+                    m_EODLOSRAD,
+                    pTxAntennaPanel->GetTxRxOrientRAD(),
+                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+                    0),
+            ELoSRAD_GCS2LCS(
+                    m_AODLOSRAD,
+                    m_EODLOSRAD,
+                    pTxAntennaPanel->GetTxRxOrientRAD(),
+                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+                    0)));
+//        if(_iLinkCategory==2){
+//            double dAzimuthRAD_RISRx_LCS = ALoSRAD_GCS2LCS(
+//                    m_AODLOSRAD,
+//                    m_EODLOSRAD,
+//                    pTxAntennaPanel->GetTxRxOrientRAD(),
+//                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+//                    0);
+//            if((dAzimuthRAD_RISRx_LCS<=-M_PI/2.0)||M_PI/2.0<=dAzimuthRAD_RISRx_LCS){
+//                Tx_AOG = 0;
+//            }
+//        }
+//        if(_iLinkCategory==1){
+//            Tx_AOG = DB2L(_tx.GetTxAOGDB(
+//                    ALoSRAD_GCS2LCS(
+//                    m_AODLOSRAD,
+//                    m_EODLOSRAD,
+//                    pTxAntennaPanel->GetTxRxOrientRAD(),
+//                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+//                    0),
+//                    ELoSRAD_GCS2LCS(
+//                    m_AODLOSRAD,
+//                    m_EODLOSRAD,
+//                    pTxAntennaPanel->GetTxRxOrientRAD(),
+//                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+//                    0)));
+//        }else if (_iLinkCategory==2){
+//            //获取入射角
+//            double dAzimuthRAD_BTSRIS_LCS = ALoSRAD_GCS2LCS(
+//                    _tx.pris->dAOARAD_BTSRIS_GCS,
+//                    _tx.pris->dEOARAD_BTSRIS_GCS,
+//                    pTxAntennaPanel->GetTxRxOrientRAD(),
+//                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+//                    0);
+//            double dElevationRAD_BTSRIS_LCS = ELoSRAD_GCS2LCS(
+//                    _tx.pris->dAOARAD_BTSRIS_GCS,
+//                    _tx.pris->dEOARAD_BTSRIS_GCS,
+//                    pTxAntennaPanel->GetTxRxOrientRAD(),
+//                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+//                    0);
+//
+//
+//            //单阵子天线方向图修正（当调相后出射方向更靠近法线时修正）
+//
+//            //垂直方向
+//            double dElevationRAD_RISMS_LCS = ELoSRAD_GCS2LCS(
+//                    m_AODLOSRAD,
+//                    m_EODLOSRAD,
+//                    pTxAntennaPanel->GetTxRxOrientRAD(),
+//                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+//                    0);
+//            //入射角一定小于Pi/2,因为RIS高度比BS低
+//            if(dElevationRAD_RISMS_LCS<M_PI-dElevationRAD_BTSRIS_LCS){
+//                dElevationRAD_RISMS_LCS=2*(M_PI-dElevationRAD_BTSRIS_LCS)-dElevationRAD_RISMS_LCS;
+//            }
+//
+//            //水平方向
+//            double dAzimuthRAD_RISMS_LCS = ALoSRAD_GCS2LCS(
+//                    m_AODLOSRAD,
+//                    m_EODLOSRAD,
+//                    pTxAntennaPanel->GetTxRxOrientRAD(),
+//                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+//                    0);
+//            if(dAzimuthRAD_BTSRIS_LCS<0&&dAzimuthRAD_RISMS_LCS<(-1*dAzimuthRAD_BTSRIS_LCS)){
+//                dAzimuthRAD_RISMS_LCS = -2*dAzimuthRAD_BTSRIS_LCS-dAzimuthRAD_RISMS_LCS;
+//            }
+//            if(dAzimuthRAD_BTSRIS_LCS>0&&dAzimuthRAD_RISMS_LCS>(-1*dAzimuthRAD_BTSRIS_LCS)){
+//                dAzimuthRAD_RISMS_LCS = -2*dAzimuthRAD_BTSRIS_LCS-dAzimuthRAD_RISMS_LCS;
+//            }
+//            Tx_AOG = DB2L(_tx.GetTxAOGDB(
+//                    dAzimuthRAD_RISMS_LCS,
+//                    dElevationRAD_RISMS_LCS));
+//
+//            //单阵子天线方向图随入射角变化
+////            Tx_AOG = DB2L(_tx.GetTxAOGDB(
+////                    ALoSRAD_GCS2LCS(
+////                    m_AODLOSRAD,
+////                    m_EODLOSRAD,
+////                    pTxAntennaPanel->GetTxRxOrientRAD(),
+////                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+////                    0)+dAzimuthRAD_BTSRIS_LCS,
+////                    ELoSRAD_GCS2LCS(
+////                    m_AODLOSRAD,
+////                    m_EODLOSRAD,
+////                    pTxAntennaPanel->GetTxRxOrientRAD(),
+////                    pTxAntennaPanel->GetMechanicalTiltRAD(),
+////                    0)+dElevationRAD_BTSRIS_LCS-1.0/2.0 * M_PI));
+//
+//        }else{
+//            assert(false);
+//        }
+
+    double Tx_PolarAngle_RAD = pTx_TXRU->GetPolarAngle_RAD();
+
+    temp2(0, 0) =
+            cos(Tx_PhiRAD) * sqrt(Tx_AOG) * std::cos(Tx_PolarAngle_RAD)
+            - sin(Tx_PhiRAD) * sqrt(Tx_AOG) * std::sin(Tx_PolarAngle_RAD); //36.814
+
+    temp2(1, 0) =
+            sin(Tx_PhiRAD) * sqrt(Tx_AOG) * std::cos(Tx_PolarAngle_RAD)
+            + cos(Tx_PhiRAD) * sqrt(Tx_AOG) * std::sin(Tx_PolarAngle_RAD); //36.814
+
+
+
+    itpp::cmat temp1 = itpp::zeros_c(1, 2);
+
+    std::shared_ptr<AntennaPanel> pRxAntennaPanel = pRx_TXRU->GetFatherAntennaPanelPointer();
+    double Rx_PhiRAD = GetPhiRAD_GCS(
+            m_AOALOSRAD,
+            m_EOALOSRAD,
+            pRxAntennaPanel->GetTxRxOrientRAD(),
+            pRxAntennaPanel->GetMechanicalTiltRAD(),
+            0);
+    double Rx_AOG = DB2L(_rx.GetRxAOGDB(
+            ALoSRAD_GCS2LCS(
+                    m_AOALOSRAD,
+                    m_EOALOSRAD,
+                    pRxAntennaPanel->GetTxRxOrientRAD(),
+                    pRxAntennaPanel->GetMechanicalTiltRAD(),
+                    0),
+            ELoSRAD_GCS2LCS(
+                    m_AOALOSRAD,
+                    m_EOALOSRAD,
+                    pRxAntennaPanel->GetTxRxOrientRAD(),
+                    pRxAntennaPanel->GetMechanicalTiltRAD(),
+                    0)));
+
+//        if(_iLinkCategory==1){
+//            double dAzimuthRAD_TxRIS_LCS = ALoSRAD_GCS2LCS(
+//                m_AOALOSRAD,
+//                m_EOALOSRAD,
+//                pRxAntennaPanel->GetTxRxOrientRAD(),
+//                pRxAntennaPanel->GetMechanicalTiltRAD(),
+//                0);
+//            if((dAzimuthRAD_TxRIS_LCS<=-M_PI/2.0)||(M_PI/2.0<=dAzimuthRAD_TxRIS_LCS)){
+//                Rx_AOG = 0;
+//            }
+//        }
+//        if(_iLinkCategory==1){
+//            Rx_AOG = 1;
+//        }
+
+
+    double Rx_PolarAngle_RAD = pRx_TXRU->GetPolarAngle_RAD();
+
+
+    temp1(0, 0) =
+            cos(Rx_PhiRAD) * sqrt(Rx_AOG) * std::cos(Rx_PolarAngle_RAD)
+            - sin(Rx_PhiRAD) * sqrt(Rx_AOG) * std::sin(Rx_PolarAngle_RAD); //36.814
+
+    temp1(0, 1) =
+            sin(Rx_PhiRAD) * sqrt(Rx_AOG) * std::cos(Rx_PolarAngle_RAD)
+            + cos(Rx_PhiRAD) * sqrt(Rx_AOG) * std::sin(Rx_PolarAngle_RAD); //36.814
+
+
+    std::complex<double> cTempD_RIS =(temp1 * temp3 * temp2) (0, 0);
+//    if(_iLinkCategory==1){
+//        cTempD_RIS = 1 ;
+//    }else if (_iLinkCategory==2){
+//        cTempD_RIS = Tx_AOG;
+//    }
+
+    return cTempD_RIS;
+
+}
+
+void BasicChannelState::CalculateAlpha_for_CouplingLoss_Linear_RIS(Tx& _tx, Rx& _rx, int _iLinkCategory){
+
+    std::shared_ptr<cm::Antenna> pTxAntenna
+            = _tx.GetAntennaPointer();
+
+    std::shared_ptr<cm::Antenna> pRxAntenna
+            = _rx.GetAntennaPointer();
+
+
+    assert(pTxAntenna->GetTotalAntennaPanel_Num()==1);
+    assert(pRxAntenna->GetTotalAntennaPanel_Num()==1);
+    if(_iLinkCategory==1){
+        Alpha_for_CouplingLoss = itpp::zeros_c(
+                pTxAntenna->Get_V_BeamNum()*pTxAntenna->Get_H_BeamNum(),
+                pRxAntenna->GetTotalTXRU_Num());
+    }else if(_iLinkCategory==2){
+        Alpha_for_CouplingLoss = itpp::zeros_c(
+                pRxAntenna->Get_V_BeamNum()*pRxAntenna->Get_H_BeamNum(),
+                pTxAntenna->GetTotalTXRU_Num());
+    }else{
+        assert(false);
+    }
+
+
+    BOOST_FOREACH(std::shared_ptr<AntennaPanel> pTxAntennaPanel,
+                  pTxAntenna->GetvAntennaPanels()) {
+
+                    BOOST_FOREACH(std::shared_ptr<AntennaPanel> pRxAntennaPanel,
+                                  pRxAntenna->GetvAntennaPanels()) {
+
+                                    if(_iLinkCategory==1){
+                                        for (int Tx_V_BeamIndex = 0; Tx_V_BeamIndex < pTxAntenna->Get_V_BeamNum(); ++Tx_V_BeamIndex) {
+                                            for (int Tx_H_BeamIndex = 0; Tx_H_BeamIndex < pTxAntenna->Get_H_BeamNum(); ++Tx_H_BeamIndex) {
+                                                int TxBeamIndex = pTxAntenna->Get_CombBeamIndex(Tx_V_BeamIndex, Tx_H_BeamIndex);
+                                                int RxBeamIndex = 0;//RIS beam calculate in linkmatrix;
+                                                std::shared_ptr<cm::CTXRU> pTx_TXRU0 = pTxAntennaPanel->GetFirstTXRU();
+                                                BOOST_FOREACH(std::shared_ptr<CTXRU> pRx_TXRU,pRxAntennaPanel->GetvTXRUs()){
+                                                                Alpha_for_CouplingLoss(
+                                                                        TxBeamIndex, pRx_TXRU->GetTXRUIndex())= CalAlpha_for_CouplingLoss_of_Beampair_RIS(
+                                                                        _iLinkCategory,
+                                                                        _tx,_rx,
+                                                                        TxBeamIndex, RxBeamIndex,
+                                                                        pTx_TXRU0, pRx_TXRU);
+                                                                //Observer::Print("CouplingLoss1") << TxBeamIndex << setw(20) <<pRx_TXRU->GetTXRUIndex() << setw(20) << Alpha_for_CouplingLoss(TxBeamIndex, pRx_TXRU->GetTXRUIndex()) << endl;
+                                                            }
+                                            }
+                                        }
+                                    }else if(_iLinkCategory==2){
+                                        for (int Rx_V_BeamIndex = 0; Rx_V_BeamIndex < pRxAntenna->Get_V_BeamNum(); ++Rx_V_BeamIndex) {
+                                            for (int Rx_H_BeamIndex = 0; Rx_H_BeamIndex < pRxAntenna->Get_H_BeamNum(); ++Rx_H_BeamIndex) {
+
+                                                int TxBeamIndex = 0;//RIS beam calculate in linkmatrix;
+                                                int RxBeamIndex = pRxAntenna->Get_CombBeamIndex(Rx_V_BeamIndex, Rx_H_BeamIndex);
+                                                std::shared_ptr<cm::CTXRU> pRx_TXRU0 = pRxAntennaPanel->GetFirstTXRU();
+                                                BOOST_FOREACH(std::shared_ptr<CTXRU> pTx_TXRU,pTxAntennaPanel->GetvTXRUs()){
+
+                                                                Alpha_for_CouplingLoss(
+                                                                        RxBeamIndex, pTx_TXRU->GetTXRUIndex())= CalAlpha_for_CouplingLoss_of_Beampair_RIS(
+                                                                        _iLinkCategory,
+                                                                        _tx,_rx,
+                                                                        TxBeamIndex, RxBeamIndex,
+                                                                        pTx_TXRU, pRx_TXRU0);
+//                        Observer::Print("CouplingLoss1") << RxBeamIndex << setw(20) <<pTx_TXRU->GetTXRUIndex() << setw(20) <<Alpha_for_CouplingLoss(RxBeamIndex, pTx_TXRU->GetTXRUIndex()) << endl;
+//                        Observer::Print("CouplingLoss2") << RxBeamIndex << setw(20) <<pTx_TXRU->GetTXRUIndex() << setw(20) <<Alpha_for_CouplingLoss1(RxBeamIndex, pTx_TXRU->GetTXRUIndex()) << endl;
+
+                                                            }
+                                            }
+                                        }
+                                    }else{
+                                        assert(false);
+                                    }
+                                }
+                }
+}
+
+std::shared_ptr<PathLoss> BasicChannelState::GetPathLossFun(Tx& _tx, Rx& _rx, bool _bIsLOS, int _iLinkCategory) {
+    std::shared_ptr<PathLoss> result;
+    if(_iLinkCategory==0){
+        if (_rx.GetSpecial() == 0) {
+            result = Scene->GetPathLossPtr(_tx, _rx, _bIsLOS);
+        } else if(_rx.GetSpecial() == 1) {
+            std::pair<int, int> pos(_tx.GetX() + _rx.GetX(), _tx.GetY() + _rx.GetY());
+            bool Islowloss = _rx.IsLowloss();
+            //lm.SetPos2Din(pos,*Scene);
+            lm.SetPos2PentratinlossSF(Islowloss, pos);
+            result = Scene->GetPathLossPtr(lm.m_Pos2Din[pos], _bIsLOS, _rx.IsLowloss(), lm.m_Pos2PentratinlossSF[pos]);
+        }
+    }
+    else if(_iLinkCategory==1){
+        if(P::s().IChannelModel_for_Scenario == P::UMA
+                ){
+            //UMA，outdoor场景
+            if (_bIsLOS){
+                result = std::shared_ptr<PathLoss > (new BS2RISPathLossUrbanMacroOutdoorLOS());}
+            else{
+                result = std::shared_ptr<PathLoss > (new BS2RISPathLossUrbanMacroOutdoorNLOS());}
+        }else if (P::s().IChannelModel_for_Scenario == P::UMI) {
+            if (_rx.GetSpecial() == 0) {
+                if (_bIsLOS){
+                    result = std::shared_ptr<PathLoss > (new BS2RISPathLossUrbanMicroLOS_ModeB());
+
+                }else{
+                    result = std::shared_ptr<PathLoss > (new BS2RISPathLossUrbanMicroNLOS_ModeB());
+                }
+            }
+        }
+    }
+    else if(_iLinkCategory==2){
+        if(P::s().IChannelModel_for_Scenario == P::UMA){
+            if (_rx.GetSpecial() == 0) {
+                //UMA，outdoor场景
+                if (_bIsLOS){
+                    result = std::shared_ptr<PathLoss > (new RIS2MSPathLossUrbanMacroOutdoorLOS());}
+                else{
+                    result = std::shared_ptr<PathLoss > (new RIS2MSPathLossUrbanMacroOutdoorNLOS());}
+            }else if(_rx.GetSpecial() == 1) {
+                std::pair<int, int> pos(_tx.GetX() + _rx.GetX(), _tx.GetY() + _rx.GetY());
+                bool Islowloss = _rx.IsLowloss();
+                //lm.SetPos2Din(pos,*Scene);
+                lm.SetPos2PentratinlossSF(Islowloss, pos);
+                result = Scene->GetPathLossPtr(lm.m_Pos2Din[pos], _bIsLOS, _rx.IsLowloss(), lm.m_Pos2PentratinlossSF[pos]);
+            }
+        }else if (P::s().IChannelModel_for_Scenario == P::UMI) {
+            if (_rx.GetSpecial() == 0) {
+                if (_bIsLOS){
+                    result = std::shared_ptr<PathLoss > (new RIS2MSPathLossUrbanMicroLOS_ModeB());
+
+                }else{
+                    result = std::shared_ptr<PathLoss > (new RIS2MSPathLossUrbanMicroLOS_ModeB());
+                }
+            }
+        }
+    }else{
+        assert(false);
+    }
+    return result;
+}
+
+void BasicChannelState::Near_Initialize(){
+    assert(m_iLinkCategory==2);
+    m_IsNear==true;
+    double dTxHeight = m_pTx->GetTxHeightM();
+    double dRxHeight = m_pRx->GetRxHeightM();
+
+    std::shared_ptr<cm::Antenna> pTxAntenna
+            = m_pTx->GetAntennaPointer();
+
+    std::shared_ptr<cm::Antenna> pRxAntenna
+            = m_pRx->GetAntennaPointer();
+    //近场暂时只考虑第一个Panel
+    std::shared_ptr<AntennaPanel>  _txAP=pTxAntenna->GetFirstAntennaPanelPointer();
+    std::shared_ptr<AntennaPanel>  _rxAP=pRxAntenna->GetFirstAntennaPanelPointer();
+    double tilt_tx=_txAP->GetMechanicalTiltRAD();
+    double tilt_rx=_rxAP->GetMechanicalTiltRAD();
+    double orient_tx=_txAP->GetTxRxOrientRAD();
+    double orient_rx=_rxAP->GetTxRxOrientRAD();
+    std::map<std::pair<int,int>,double> TXRU2PL;
+    Alpha_for_CouplingLoss1 = itpp::zeros_c(
+            pRxAntenna->Get_V_BeamNum()*pRxAntenna->Get_H_BeamNum(),
+            pTxAntenna->GetTotalTXRU_Num());
+    BOOST_FOREACH(std::shared_ptr<CTXRU> TX_Ctx, _txAP->GetvTXRUs()) {
+
+                    double _tx_x = m_pTx->m_pPoint->GetX() + TX_Ctx->m_H_Offset_lamda*-sin(orient_tx);
+                    double _tx_y = m_pTx->m_pPoint->GetY() + TX_Ctx->m_H_Offset_lamda * cos(orient_tx);
+                    Point _tx_TX = Point(_tx_x, _tx_y);
+                    double _tx_h = dTxHeight - TX_Ctx->m_V_Offset_lamda * cos(tilt_tx);
+
+                    BOOST_FOREACH(std::shared_ptr<CTXRU> Rx_Ctx, _rxAP->GetvTXRUs()) {
+
+                                    double _rx_x = m_pRx->m_pPoint->GetX() + Rx_Ctx->m_H_Offset_lamda*-sin(orient_rx);
+                                    double _rx_y = m_pRx->m_pPoint->GetY() + Rx_Ctx->m_H_Offset_lamda * cos(orient_rx);
+                                    Point _rx_TX = Point(_rx_x, _rx_y);
+                                    double _rx_h = dRxHeight - Rx_Ctx->m_V_Offset_lamda * cos(tilt_tx);
+                                    Point tx_wrap = WrapAround::Instance().WrapTx(_rx_TX, _tx_TX);
+                                    double d2DDistanceM = Distance(_rx_TX, tx_wrap);
+                                    double dUE2BSTiltRAD = std::atan((_tx_h - _rx_h) / d2DDistanceM); //以垂直于Z轴为0度，向上为负角度，向下为正角度
+                                    Point orient1 = _rx_TX - tx_wrap;
+                                    Point orient2 = tx_wrap - _rx_TX;
+                                    double angle1RAD = std::arg(std::complex <double>(orient1.GetX(), orient1.GetY()));
+                                    double angle2RAD = std::arg(std::complex <double>(orient2.GetX(), orient2.GetY()));
+                                    angle1RAD = ConvergeAngle(angle1RAD);
+                                    angle2RAD = ConvergeAngle(angle2RAD);
+                                    double AODLOSRAD = angle1RAD; //GCS
+                                    double AOALOSRAD = angle2RAD; //GCS
+                                    //GCS
+                                    double EODLOSRAD = dUE2BSTiltRAD + M_PI / 2; //坐标系的Z轴为朝上的方向为0度
+                                    //GCS
+                                    double EOALOSRAD = M_PI - EODLOSRAD;
+                                    TXRU2AOD[std::make_pair(TX_Ctx->GetTXRUIndex(), Rx_Ctx->GetTXRUIndex())] = AODLOSRAD;
+                                    TXRU2AOA[std::make_pair(TX_Ctx->GetTXRUIndex(), Rx_Ctx->GetTXRUIndex())] = AOALOSRAD;
+                                    TXRU2EOD[std::make_pair(TX_Ctx->GetTXRUIndex(), Rx_Ctx->GetTXRUIndex())] = EODLOSRAD;
+                                    TXRU2EOA[std::make_pair(TX_Ctx->GetTXRUIndex(), Rx_Ctx->GetTXRUIndex())] = EOALOSRAD;
+                                    TXRU2DIS[std::make_pair(TX_Ctx->GetTXRUIndex(), Rx_Ctx->GetTXRUIndex())] = sqrt(pow(d2DDistanceM, 2.0) + pow(abs(_tx_h - _rx_h), 2.0));
+                                    TXRU2PL[std::make_pair(TX_Ctx->GetTXRUIndex(), Rx_Ctx->GetTXRUIndex())]=
+                                            GetPathLossFun(*m_pTx, *m_pRx, m_bIsLOS,m_iLinkCategory)->Db(TXRU2DIS[std::make_pair(TX_Ctx->GetTXRUIndex(), Rx_Ctx->GetTXRUIndex())], dRxHeight);
+                                    double dInCarLossDB = m_pRx->GetInCarLossDB();
+                                    TXRU2LL[std::make_pair(TX_Ctx->GetTXRUIndex(), Rx_Ctx->GetTXRUIndex())]=
+                                            TXRU2PL[std::make_pair(TX_Ctx->GetTXRUIndex(), Rx_Ctx->GetTXRUIndex())]+m_ShadowFadingDB+dInCarLossDB
+                                            + Parameters::Instance().Macro.DOTA_dB
+                                            + Parameters::Instance().Macro.DMSBodyLoss_dB
+                                            + Parameters::Instance().Macro.DTransmissionLineLoss_dB;
+                                    for (int Rx_V_BeamIndex = 0; Rx_V_BeamIndex < pRxAntenna->Get_V_BeamNum(); ++Rx_V_BeamIndex) {
+                                        for (int Rx_H_BeamIndex = 0; Rx_H_BeamIndex < pRxAntenna->Get_H_BeamNum(); ++Rx_H_BeamIndex) {
+
+                                            int TxBeamIndex = 0;//RIS beam calculate in linkmatrix;
+                                            int RxBeamIndex = pRxAntenna->Get_CombBeamIndex(Rx_V_BeamIndex, Rx_H_BeamIndex);
+                                            std::shared_ptr<cm::CTXRU> pRx_TXRU0 = _rxAP->GetFirstTXRU();
+                                            BOOST_FOREACH(std::shared_ptr<CTXRU> pTx_TXRU,_txAP->GetvTXRUs()){
+
+                                                            Alpha_for_CouplingLoss1(
+                                                                    RxBeamIndex, pTx_TXRU->GetTXRUIndex())= CalAlpha_for_CouplingLoss_of_Beampair_RIS_Test(
+                                                                    2,
+                                                                    *m_pTx,*m_pRx,
+                                                                    TxBeamIndex, RxBeamIndex,
+                                                                    pTx_TXRU, pRx_TXRU0);
+//                        Observer::Print("CouplingLoss1") << RxBeamIndex << setw(20) <<pTx_TXRU->GetTXRUIndex() << setw(20) <<Alpha_for_CouplingLoss(RxBeamIndex, pTx_TXRU->GetTXRUIndex()) << endl;
+//                        Observer::Print("CouplingLoss2") << RxBeamIndex << setw(20) <<pTx_TXRU->GetTXRUIndex() << setw(20) <<Alpha_for_CouplingLoss1(RxBeamIndex, pTx_TXRU->GetTXRUIndex()) << endl;
+
+                                                        }
+                                        }
+                                    }
+
+
+
+                                }
+                }
+
+
+
+}
+
+void BasicChannelState::Near_Delete() {
+
+    map<std::pair<int, int>, double>().swap(TXRU2AOA);
+    map<std::pair<int, int>, double>().swap(TXRU2AOD);
+    map<std::pair<int, int>, double>().swap(TXRU2EOD);
+    map<std::pair<int, int>, double>().swap(TXRU2EOA);
+    map<std::pair<int, int>, double>().swap(TXRU2DIS);
+    malloc_trim(0);
+}
+
+
+    void BasicChannelState::InitializeMap() {
     m_pDSMapLOS = std::make_shared<GaussianMap>(P::s().Macro2UE_LOS.DSCorrDistM);
     m_pAODMapLOS = std::make_shared<GaussianMap > (P::s().Macro2UE_LOS.ASDCorrDistM);
     m_pAOAMapLOS = std::make_shared<GaussianMap > (P::s().Macro2UE_LOS.ASACorrDistM);

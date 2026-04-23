@@ -18,8 +18,11 @@ namespace cm {
     class Point;
     class Tx;
     class Rx;
+    class CTXRU;
     class GaussianMap;
     class AntennaPanel;
+    class Scenario;
+    class PathLoss;
 
     typedef std::pair<double, double> POS;
     typedef std::pair<POS, POS> KEY;
@@ -109,11 +112,34 @@ namespace cm {
         static void InitializeMap();
 
     public:
+        void CalculateAlpha_for_CouplingLoss_Linear_RIS(
+                Tx& _tx, Rx& _rx, int _iLinkCategory);
+
+        std::complex<double> CalAlpha_for_CouplingLoss_of_Beampair_RIS(
+                int _iLinkCategory,
+                Tx& _tx, Rx& _rx,
+                int Tx_BeamIndex, int Rx_BeamIndex,
+                std::shared_ptr<CTXRU> pTx_TXRU,
+                std::shared_ptr<CTXRU> pRx_TXRU);
+
+        std::complex<double> CalTempD_RIS_for_TXRUPair(
+                int _iLinkCategory,
+                Tx& _tx, Rx& _rx,
+                std::shared_ptr<CTXRU> pTx_TXRU,
+                std::shared_ptr<CTXRU> pRx_TXRU);
+        //近场初始化
+        void Near_Initialize();
+        //近场信道删除
+        void Near_Delete();
+
+    public:
         std::pair<int,int> RIS_BtsBeamIndex;
         //临时域，可优化
         std::pair<int,int> RIS_BtsBeamIndex2;
         /// 标记是否为可视径
         bool m_bIsLOS;
+        //标记是否为近场
+        bool m_IsNear;
         /// 记录发送者到接收者的俯角，单位：弧度
         double m_dUE2BSTiltRAD;
         /// 发送者到接收者的距离，单位：米
@@ -170,6 +196,8 @@ namespace cm {
         Tx* m_pTx; //****************************************************************
         /// The point for receiver
         Rx* m_pRx; //****************************************************************
+        ///场景
+        Scenario* Scene;
         /// The link loss of diffrent wrapping position.
         std::vector<double> m_vAveLinkLossDB;
         ///
@@ -190,6 +218,13 @@ namespace cm {
         itpp::Mat<std::complex<double> > Alpha_for_CouplingLoss;
         //近场coupling loss
         itpp::Mat<std::complex<double> > Alpha_for_CouplingLoss1;
+        //近场用，TXRU-各种方向角和距离的map
+        std::map<std::pair<int,int>,double> TXRU2AOD;
+        std::map<std::pair<int,int>,double> TXRU2AOA;
+        std::map<std::pair<int,int>,double> TXRU2EOD;
+        std::map<std::pair<int,int>,double> TXRU2EOA;
+        std::map<std::pair<int,int>,double> TXRU2DIS;
+
     public:
         /// Initialize the basic channel m_state.
         void Initialize(Tx& _tx, Rx& _rx);
@@ -199,6 +234,8 @@ namespace cm {
         /// 判断该链路是否为Macro-UE
         bool IsMacroToUE() const;
         /// 判断该链路是否为Macro-UE
+        //算路损
+        std::shared_ptr<PathLoss> GetPathLossFun(Tx& _tx, Rx& _rx, bool _bIsLOS, int _iLinkCategory);
         bool IsPicoToUE() const;
         Tx& GetItsMacro() const;
     private:
@@ -214,5 +251,12 @@ namespace cm {
         ~BasicChannelState() = default;
         std::vector<double> m_couplingloss_ris;
         int m_risindex;
+
+        bool DecideRIS2MSLOS(double _dDisM_2D, Tx &_tx, Rx &_rx);
+
+        complex<double>
+        CalAlpha_for_CouplingLoss_of_Beampair_RIS_Test(int _iLinkCategory, Tx &_tx, Rx &_rx, int Tx_BeamIndex,
+                                                       int Rx_BeamIndex,
+                                                       std::shared_ptr<CTXRU> pTx_TXRU, std::shared_ptr<CTXRU> pRx_TXRU);
     };
 }

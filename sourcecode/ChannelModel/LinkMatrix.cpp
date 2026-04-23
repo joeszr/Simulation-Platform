@@ -165,12 +165,27 @@ void LinkMatrix::Initialize(Rx& _rx) {
 
     //如果是低频
     if (Parameters::Instance().BASIC.IScenarioModel <= 3) { ////ITU场景，设置强链路个数
+        cerr << "[DEBUG] LinkMatrix::Initialize(RX=" << rxid << ") entering strong link selection, TotalTX=" << Tx::CountTx() << endl;
         std::vector<std::pair<double, int> > tempvec1;
         for (int i = 0; i < Tx::CountTx(); ++i) {
             Tx& tx = Tx::GetTx(i);
             TxRxID txrxid = std::make_pair(tx.GetTxID(), rxid);
+            
+            // 20260415 诊断日志：记录设置 m_bIsStrong=false 前的状态
+            bool wasStrong = m_TxRx2CS[txrxid].m_bIsStrong;
+            bool hadSCS = (m_TxRx2CS[txrxid].m_pSCS != nullptr);
+            
             m_TxRx2CS[txrxid].m_bIsStrong = false;
+            
+            cerr << "[DEBUG] TX=" << tx.GetTxID() << " RX=" << rxid
+                 << " wasStrong=" << (wasStrong ? "Y" : "N")
+                 << " hadSCS=" << (hadSCS ? "Y" : "N")
+                 << " -> setStrong=false" << flush;
+            
             double dLinkLossDB = GetCouplingLossDB(tx, _rx);
+            
+            cerr << " linkLoss=" << dLinkLossDB << "dB" << endl;
+            
             double dTxPower = (m_TxRx2CS[txrxid].m_BCS.IsMacroToUE()) ? Parameters::Instance().Macro.DL.DMaxTxPowerDbm : Parameters::Instance().SmallCell.LINK.DPicoMaxTxPowerDbm;
             double dReceivedPower = dLinkLossDB + dTxPower;
             tempvec1.emplace_back(std::make_pair(dReceivedPower, i));
@@ -205,7 +220,7 @@ void LinkMatrix::Initialize(Rx& _rx) {
 
 
 
-///仅初始化 BTS→RIS 信道（填充 m_TxRIS2CS），不依赖 MS 信息
+///仅初始化 BTS→RIS 信道
 void LinkMatrix::RISInitialize_TxRIS() {
     // （可选）TXRU 规模参数
     int IHAntNumPerPanel = Parameters::Instance().Macro.IHAntNumPerPanel;
@@ -226,8 +241,8 @@ void LinkMatrix::RISInitialize_TxRIS() {
 
             m_TxRIS2CS[txrisid] = ChannelState();
             m_TxRIS2CS[txrisid].Initialize(tx, ris);
-            m_TxRIS2CS[txrisid].InitStrongSCM();
-            m_TxRIS2CS[txrisid].SetStrong();
+            m_TxRIS2CS[txrisid].SetStrong();       // 先设置
+            m_TxRIS2CS[txrisid].InitStrongSCM();   // 再初始化，m_bIsStrong=true，正常创建 m_pSCS
             m_TxRIS2CS[txrisid].CalH();
         }
     }
@@ -312,23 +327,41 @@ void LinkMatrix::WorkSlot_RIS(double t) {
 ///信道链路损失和衰减计算
 double LinkMatrix::GetCouplingLossDB(Tx& _tx, Rx& _rx) {
     TxRxID txrxid = std::make_pair(_tx.GetTxID(), _rx.GetRxID());
+    
+    // 20260415 诊断日志：检查 m_pSCS 是否为空，定位 SIGSEGV 根因
+    SpaceChannelState* pSCS_ptr = m_TxRx2CS[txrxid].m_pSCS.get();
+    bool isStrong = m_TxRx2CS[txrxid].m_bIsStrong;
+    if (!pSCS_ptr) {
+        cerr << "[BUG] GetCouplingLossDB: TX=" << _tx.GetTxID() 
+             << " RX=" << _rx.GetRxID() 
+             << " m_pSCS=NULL m_bIsStrong=" << (isStrong ? "true" : "false") 
+             << endl;
+    }
+    
     //******************方法1：适用于完整的信道初始化方法****************
     //    return L2DB(m_TxRx2CS[txrxid].m_pSCS->m_dStrongestEnergy);
 
     //******************方法2：适用于简化的信道初始化方法****************
     //    if (IsStrong(_tx, _rx)) {
     if (Parameters::Instance().BASIC.BISRIS) {
-        // BISRIS=1 时：对“LinkLoss/RSRP/调度 PL”等口径采用直连+RIS 的等效耦合增益
+        // BISRIS=1 时：对"LinkLoss/RSRP/调度 PL"等口径采用直连+RIS 的等效耦合增益
         // 这里使用合并信道矩阵的平均功率作为等效耦合增益（线性域），再转 dB。
         // 若级联信道尚未填充，则回退到直连 strongest coupling loss。
-        SpaceChannelState* pSCS = m_TxRx2CS[txrxid].m_pSCS.get();
-        if (pSCS) {
-            double eq = pSCS->GetEquivalentCouplingLossLinear_DirectPlusRIS(0);
+        if (pSCS_ptr) {
+            double eq = pSCS_ptr->GetEquivalentCouplingLossLinear_DirectPlusRIS(0);
             if (eq > 0) {
                 return L2DB(eq);
             }
         }
     }
+    
+    // 20260415 修复：添加空指针检查，防止 SIGSEGV
+    if (!pSCS_ptr) {
+        cerr << "[FALLBACK] Using LoSLinkLossDB for TX=" << _tx.GetTxID() 
+             << " RX=" << _rx.GetRxID() << endl;
+        return m_TxRx2CS[txrxid].m_BCS.m_LoSLinkLossDB;
+    }
+    
     return L2DB(m_TxRx2CS[txrxid].m_pSCS->m_dStrongestCouplingLoss_Linear); // 直连口径
     //    } else {
     //        return m_TxRx2CS[txrxid].m_BCS.m_LoSLinkLossDB;
@@ -659,6 +692,19 @@ void LinkMatrix::SetPos2Din(Tx& _tx, Rx& _rx) {
 double LinkMatrix::GetPos2Din(std::pair<int, int> & _pos) {
     return m_Pos2Din[_pos];
 }
+
+void LinkMatrix::SetPos2PentratinlossSF(bool _iIslowloss, std::pair<int, int> _pos) {
+    if (m_Pos2PentratinlossSF.find(_pos) == m_Pos2PentratinlossSF.end()) {
+        if (_iIslowloss) {
+            //low loss
+            m_Pos2PentratinlossSF[_pos] = xNormal_channel(0, 4.4);
+        } else {
+            //high loss
+            m_Pos2PentratinlossSF[_pos] = xNormal_channel(0, 6.5);
+        }
+    }
+}
+
 ///setPos2Pentratinloss
 bool LinkMatrix::IsStrong(Tx& _tx, Rx& _rx) {
     TxRxID txrxid = std::make_pair(_tx.GetTxID(), _rx.GetRxID());

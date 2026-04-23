@@ -82,13 +82,13 @@ Parameters for  November FTP
 //基站数
 &	Macro.DSiteDistanceM			200
 //基站间距
-&	BASIC.DNumMSPerBTS		1
+&	BASIC.DNumMSPerBTS		10
 //每小区用户数
 &	BASIC.IMaxServeMSNum			10
 //小区最大服务用户数
 &	BASIC.type1MSRate			0.5
 //混合用户下类型1用户占比
-&	BASIC.IBTSPerBS			1
+&	BASIC.IBTSPerBS			3
 //基站内小区数
 &	Macro.LINK.DMinDistanceM			10
 //基站用户最小距离

@@ -216,6 +216,9 @@ void BSManager::DistributeRISs(){
                 ris_y[k] = dy[j][k] + y;
 
                 ris.SetXY(ris_x[k], ris_y[k]);
+                ///20260411 同步RIS坐标到TxNode/RxNode
+                ris.GetTx().SetXY(ris_x[k], ris_y[k]);
+                ris.GetRx().SetXY(ris_x[k], ris_y[k]);
 
                 Observer::Print("RIS_Position") << ris_x[k] << setw(20) << ris_y[k] << endl;
 

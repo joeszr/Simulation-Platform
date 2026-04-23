@@ -515,7 +515,7 @@ void MS::UE_attach_new() {
 }
 std::mutex outlock;
 bool MS::Initialize() {
-    // 20260324初始化 RIS 计算所需的 MSRxNode（使用当前已分配的 MS 位置）
+    //20260411：创建MSRxNode用于RIS信道计算
     m_pRxNode = std::make_shared<cm::MSRxNode>(*this);
     m_clsMacMs.setMs(this);
     uci.initilize(m_ID);

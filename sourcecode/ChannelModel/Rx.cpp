@@ -69,6 +69,7 @@ Rx::Rx(Point& _point) {
     m_iTotalFloorNum = 0;
     m_iFloorNum = 0;
     type = 1;
+    m_pPoint = &_point;
     Build_UE_Antenna();
 }
 ///虚析构函数的实现
